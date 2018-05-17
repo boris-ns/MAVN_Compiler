@@ -1,7 +1,15 @@
-#include "LexicalAnalysis.h"
+//==============================================================================
+// Name        : main.cpp
+// Author      : Boris Sulicenko
+// Date created: 17.05.2018.
+// Description : MAVN compiler. Translates high level mips assembly to 
+//               low level mips assembly.
+//==============================================================================
 
 #include <iostream>
 #include <exception>
+#include "LexicalAnalysis.h"
+#include "SyntaxAnalysis.h"
 
 using namespace std;
 
@@ -12,13 +20,13 @@ void main()
 		std::string fileName = ".\\..\\examples\\simple.mavn";
 		bool retVal = false;
 
+		// Run lexical analysis
 		LexicalAnalysis lex;
 		
 		if (!lex.readInputFile(fileName))
 			throw runtime_error("\nException! Failed to open input file!\n");
 		
 		lex.initialize();
-
 		retVal = lex.Do();
 
 		if (retVal)
@@ -32,6 +40,21 @@ void main()
 			throw runtime_error("\nException! Lexical analysis failed!\n");
 		}
 
+		cout << endl << "------------------------------------"
+			 << endl << "Starting syntax analysis" << endl;
+
+		// Run syntax analysis
+		SyntaxAnalysis syntax(lex);
+		retVal = syntax.Do();
+
+		if (retVal)
+		{
+			cout << "Syntax analysis finished successfully!" << endl;
+		}
+		else
+		{
+			throw runtime_error("\nException! Syntax analysis failed!\n");
+		}
 	}
 	catch (runtime_error e)
 	{
