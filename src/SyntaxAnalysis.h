@@ -2,6 +2,8 @@
 
 #include "LexicalAnalysis.h"
 #include "Token.h"
+#include "IR.h"
+#include "Tree.h"
 
 class SyntaxAnalysis
 {
@@ -27,6 +29,10 @@ public:
 	Token getNextToken();
 
 private:
+
+	std::list<Statement*> syntaxTree;
+	std::list<Variable> memoryVariables;
+	std::list<Variable> registerVariables;
 
 	/* Reference to lexical analysis module */
 	LexicalAnalysis& lexicalAnalysis;

@@ -70,7 +70,7 @@ void SyntaxAnalysis::s()
 {
 	if (errorFound)
 		return;
-
+	
 	switch (currentToken.getType())
 	{
 	case T_MEM:
