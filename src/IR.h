@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Types.h"
-
+#include "RegisterAllocation.h"
 
 /**
  * This class represents one variable from program code.
@@ -16,14 +16,23 @@ public:
 		NO_TYPE
 	};
 
+	// @TODO: Sta sa m_position = -1 ?
 	Variable() : m_type(NO_TYPE), m_name(""), m_position(-1), m_assignment(no_assign) {}
+	Variable(std::string name) : m_name(name), m_type(NO_TYPE), m_position(-1), m_assignment(no_assign) {}
 	Variable(std::string name, int pos) : m_type(NO_TYPE), m_name(name), m_position(pos), m_assignment(no_assign) {}
+
+	bool operator==(const Variable& var)
+	{
+		return (m_name == var.m_name) ? true : false;
+	}
+
+	std::string getName() { return m_name; }
 
 private:
 	VariableType m_type;
 	std::string m_name;
 	int m_position;
-	Regs m_assignment;
+	RegsType m_assignment;
 };
 
 
@@ -42,10 +51,19 @@ public:
 	Instruction (int pos, InstructionType type, Variables& dst, Variables& src) :
 		m_position(pos), m_type(type), m_dst(dst), m_src(src) {}
 
+	// @TODO: Correct ?
+	Instruction(std::string asmString, Regs* dest, Regs* src) :
+		m_asmString(asmString), m_dest_regs(dest), m_src_regs(src) {}
+
 private:
 	int m_position;
 	InstructionType m_type;
 	
+	std::string m_asmString;
+
+	Regs* m_dest_regs;
+	Regs* m_src_regs;
+
 	Variables m_dst;
 	Variables m_src;
 

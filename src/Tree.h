@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstddef>
+#include <iostream>
 #include "RegisterAllocation.h"
+#include "IR.h"
 
 /**
 * Class describing statement in IR tree.
@@ -21,7 +23,8 @@ public:
 		EXP_STM,
 		MOVE_STM,
 		SEQ_STM,
-		NO_TYPE_STM
+		NO_TYPE_STM,
+		DECL_STM
 	};
 
 	Statement() : m_type(NO_TYPE_STM) {}
@@ -37,6 +40,31 @@ protected:
 	StatementType m_type;
 };
 
+/* Declaration statement class */
+class DeclStm : public Statement
+{
+
+public:
+
+	DeclStm() : Statement(DECL_STM), m_declaredVar(NULL) {}
+
+	DeclStm(Variable* var) : Statement(DECL_STM), m_declaredVar(var) {}
+
+	Variable* getVariable() { return m_declaredVar; };
+
+	void printStatement()
+	{
+		std::cout << "DECLARATION STATEMENT" << std::endl;
+		std::cout << "\tVariable: " << m_declaredVar->getName() << std::endl << std::endl;
+	};
+
+private:
+
+	/**
+	* Pointer to the declared variable
+	*/
+	Variable* m_declaredVar;
+};
 
 /**
 * Class describing expression in IR tree.
@@ -75,6 +103,7 @@ protected:
 
 	ExpressionType m_type;
 };
+
 
 
 /**

@@ -31,8 +31,11 @@ public:
 private:
 
 	std::list<Statement*> syntaxTree;
-	std::list<Variable> memoryVariables;
-	std::list<Variable> registerVariables;
+	Variables memoryVariables;
+	Variables registerVariables;
+
+	bool ContainsMemoryVar(Variable& var);
+	bool ContainsRegisterVar(Variable& var);
 
 	/* Reference to lexical analysis module */
 	LexicalAnalysis& lexicalAnalysis;
