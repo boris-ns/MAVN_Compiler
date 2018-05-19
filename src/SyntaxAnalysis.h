@@ -32,16 +32,27 @@ private:
 
 	Variables memoryVariables;
 	Variables registerVariables;
-	std::list<std::string> labels;
+	Instructions instructions;
 
-	bool ContainsMemoryVar(Variable& var);
-	bool ContainsRegisterVar(Variable& var);
-	
+	// @TODO: da li labele i funkcije posmatramo kao istu stvar ?
+	// @TODO: dodati proveru za postojanje labele i funkcije kod b i bltz
+	std::list<std::string> labels;
+	std::list<std::string> functions;
+
+	Variable* ContainsMemoryVar(Variable& var);
+	Variable* ContainsRegisterVar(Variable& var);
+	bool ContainsLabel(const std::string& id);
+	bool ContainsFunction(const std::string& id);
+
 	void CheckMemVariableExistance(Token& t);
 	void CheckRegVariableExistance(Token& t);
 	
 	void AddMemVarToList(Token& t);
 	void AddRegVarToList(Token& t);
+	void AddFunctionToList(Token& t);
+	void AddLabelToList(Token& t);
+
+	void CreateInstruction(InstructionType type, vector<Token>& dst, vector<Token>& src);
 
 	/* Reference to lexical analysis module */
 	LexicalAnalysis& lexicalAnalysis;

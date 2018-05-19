@@ -11,23 +11,51 @@ SyntaxAnalysis::SyntaxAnalysis(LexicalAnalysis& lex) : lexicalAnalysis(lex), err
 }
 
 /* Proverava da li je mem. promenljiva deklarisana. */
-bool SyntaxAnalysis::ContainsMemoryVar(Variable& var)
+Variable* SyntaxAnalysis::ContainsMemoryVar(Variable& var)
 {
 	for (Variables::iterator it = memoryVariables.begin(); it != memoryVariables.end(); it++)
 	{
 		if ((*it)->getName() == var.getName())
+			return (*it);
+	}
+
+	return NULL;
+}
+
+/* Proverava da li je reg. promenljiva deklarisana. */
+Variable* SyntaxAnalysis::ContainsRegisterVar(Variable& var)
+{
+	for (Variables::iterator it = registerVariables.begin(); it != registerVariables.end(); it++)
+	{
+		if ((*it)->getName() == var.getName())
+			return (*it);
+	}
+
+	return NULL;
+}
+
+/* Proverava da li je labela prethodno definisana. */
+bool SyntaxAnalysis::ContainsLabel(const std::string& id)
+{
+	for (list<string>::iterator it = labels.begin();
+		it != labels.end();
+		it++)
+	{
+		if (*it == id)
 			return true;
 	}
 
 	return false;
 }
 
-/* Proverava da li je reg. promenljiva deklarisana. */
-bool SyntaxAnalysis::ContainsRegisterVar(Variable& var)
+/* Proverava da li je funkcija prethodno definisana. */
+bool SyntaxAnalysis::ContainsFunction(const std::string& id)
 {
-	for (Variables::iterator it = registerVariables.begin(); it != registerVariables.end(); it++)
+	for (list<string>::iterator it = functions.begin();
+		it != functions.end();
+		it++)
 	{
-		if ((*it)->getName() == var.getName())
+		if (*it == id)
 			return true;
 	}
 
@@ -41,7 +69,7 @@ void SyntaxAnalysis::CheckMemVariableExistance(Token& t)
 	string variableName = t.getValue();
 	Variable variable(variableName);
 
-	if (!ContainsMemoryVar(variable))
+	if (ContainsMemoryVar(variable) == NULL)
 	{
 		cout << "Memorijska promenljiva " << variableName << " nije deklarisana." << endl;
 		errorFound = true;
@@ -55,7 +83,7 @@ void SyntaxAnalysis::CheckRegVariableExistance(Token& t)
 	string variableName = t.getValue();
 	Variable variable(variableName);
 
-	if (!ContainsRegisterVar(variable))
+	if (ContainsRegisterVar(variable) == NULL)
 	{
 		cout << "Registarska promenljiva " << variableName << " nije deklarisana." << endl;
 		errorFound = true;
@@ -69,16 +97,16 @@ void SyntaxAnalysis::AddMemVarToList(Token& t)
 	string variableName = t.getValue();
 	Variable* variable = new Variable(variableName);
 
-	if (ContainsMemoryVar(*variable))
-	{
-		errorFound = true;
-		cout << "Memorijska promenljiva: " << variableName << " je vec deklarisana." << endl;
-		return;
-	}
 	if (variableName.at(0) != 'm') 
 	{
 		errorFound = true;
 		cout << "Memorijska promenljiva: " << variableName << " mora da pocne sa slovom 'm'." << endl;
+		return;
+	}
+	if (ContainsMemoryVar(*variable) != NULL)
+	{
+		errorFound = true;
+		cout << "Memorijska promenljiva: " << variableName << " je vec deklarisana." << endl;
 		return;
 	}
 
@@ -92,20 +120,68 @@ void SyntaxAnalysis::AddRegVarToList(Token& t)
 	string variableName = t.getValue();
 	Variable* variable = new Variable(variableName);
 
-	if (ContainsRegisterVar(*variable))
-	{
-		errorFound = true;
-		cout << "Registarska promenljiva: " << variableName << " je vec deklarisana." << endl;
-		return;
-	}
-	if (variableName.at(0) != 'r')
+	if (variableName.at(0) != 'r') // @TODO: dodati proveru da li je ostatak broj, regex ? isto i gore!
 	{
 		errorFound = true;
 		cout << "Registarska promenljiva: " << variableName << " mora da pocne sa slovom 'r'." << endl;
 		return;
 	}
+	if (ContainsRegisterVar(*variable) != NULL)
+	{
+		errorFound = true;
+		cout << "Registarska promenljiva: " << variableName << " je vec deklarisana." << endl;
+		return;
+	}
 
 	registerVariables.push_back(variable);
+}
+
+void SyntaxAnalysis::AddFunctionToList(Token& t)
+{
+	string funcName = t.getValue();
+
+	// @TODO: provera da li funcName pocinje slovom
+
+	if (ContainsFunction(funcName))
+	{
+		cout << "Funkcija " << funcName << " je vec definisana." << endl;
+		errorFound = true;
+		return;
+	}
+
+	functions.push_back(funcName);
+}
+
+void SyntaxAnalysis::AddLabelToList(Token& t)
+{
+	string labelName = t.getValue();
+
+	// @TODO: da li ovde ima neko ogranicenje za ime ?
+
+	if (ContainsLabel(labelName))
+	{
+		cout << "Labela " << labelName << " je vec definisana." << endl;
+		errorFound = true;
+		return;
+	}
+
+	labels.push_back(labelName);
+}
+
+// @TODO: FINISH THIS
+// Idea: maybe big switch case for every instruction ?
+// or to do everything in e ?
+void SyntaxAnalysis::CreateInstruction(InstructionType type, vector<Token>& dst, vector<Token>& src)
+{
+	Variables destVars, srcVars;
+
+	for (size_t i = 0; i < dst.size(); ++i)
+	{
+		//destVars.push_back(ContainsRegisterVar());
+	}
+
+	// @TOOD: what is pos - 0 ??!
+	Instruction* instr = new Instruction(0, type, destVars, srcVars);
 }
 
 bool SyntaxAnalysis::Do()
@@ -186,10 +262,12 @@ void SyntaxAnalysis::s()
 
 	case T_FUNC: // _func id
 		eat(T_FUNC);
+		AddFunctionToList(currentToken);
 		eat(T_ID);
 		break;
 
 	case T_ID: // id : e
+		AddLabelToList(currentToken);
 		eat(T_ID);
 		eat(T_COL);
 		e();
@@ -218,18 +296,25 @@ void SyntaxAnalysis::e()
 	if (errorFound)
 		return;
 
+	vector<Token> src, dst;
+
 	switch (currentToken.getType())
 	{
 	case T_ADD: // add rid,rid,rid
 		eat(T_ADD);
 		CheckRegVariableExistance(currentToken);
+		dst.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
 		CheckRegVariableExistance(currentToken);
+		src.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
 		CheckRegVariableExistance(currentToken);
+		src.push_back(currentToken);
 		eat(T_R_ID);
+
+		CreateInstruction(I_ADD, dst, src);
 		break;
 
 	case T_ADDI: // addi rid,rid,num
