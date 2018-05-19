@@ -5,6 +5,12 @@
 
 using namespace std;
 
+SyntaxAnalysis::SyntaxAnalysis(LexicalAnalysis& lex) : lexicalAnalysis(lex), errorFound(false)
+{
+	tokenIterator = lexicalAnalysis.getTokenList().begin();
+}
+
+/* Proverava da li je mem. promenljiva deklarisana. */
 bool SyntaxAnalysis::ContainsMemoryVar(Variable& var)
 {
 	for (Variables::iterator it = memoryVariables.begin(); it != memoryVariables.end(); it++)
@@ -16,6 +22,7 @@ bool SyntaxAnalysis::ContainsMemoryVar(Variable& var)
 	return false;
 }
 
+/* Proverava da li je reg. promenljiva deklarisana. */
 bool SyntaxAnalysis::ContainsRegisterVar(Variable& var)
 {
 	for (Variables::iterator it = registerVariables.begin(); it != registerVariables.end(); it++)
@@ -27,12 +34,79 @@ bool SyntaxAnalysis::ContainsRegisterVar(Variable& var)
 	return false;
 }
 
-
-SyntaxAnalysis::SyntaxAnalysis(LexicalAnalysis& lex) : lexicalAnalysis(lex), errorFound(false)
+/* Proverava da li se promenljiva koja se moze napraviti od 
+   tokena nalazi u listi memorijskih promenljivih */
+void SyntaxAnalysis::CheckMemVariableExistance(Token& t)
 {
-	tokenIterator = lexicalAnalysis.getTokenList().begin();
+	string variableName = t.getValue();
+	Variable variable(variableName);
+
+	if (!ContainsMemoryVar(variable))
+	{
+		cout << "Memorijska promenljiva " << variableName << " nije deklarisana." << endl;
+		errorFound = true;
+	}
 }
 
+/* Proverava da li se promenljiva koja se moze napraviti od
+   tokena nalazi u listi registarskih promenljivih */
+void SyntaxAnalysis::CheckRegVariableExistance(Token& t)
+{
+	string variableName = t.getValue();
+	Variable variable(variableName);
+
+	if (!ContainsRegisterVar(variable))
+	{
+		cout << "Registarska promenljiva " << variableName << " nije deklarisana." << endl;
+		errorFound = true;
+	}
+}
+
+/* Proverava da li je promenljiva vec deklarisana i da li 
+   pocinje na slovo 'm'. Smesta promenljivu u listu. */
+void SyntaxAnalysis::AddMemVarToList(Token& t)
+{
+	string variableName = t.getValue();
+	Variable* variable = new Variable(variableName);
+
+	if (ContainsMemoryVar(*variable))
+	{
+		errorFound = true;
+		cout << "Memorijska promenljiva: " << variableName << " je vec deklarisana." << endl;
+		return;
+	}
+	if (variableName.at(0) != 'm') 
+	{
+		errorFound = true;
+		cout << "Memorijska promenljiva: " << variableName << " mora da pocne sa slovom 'm'." << endl;
+		return;
+	}
+
+	memoryVariables.push_back(variable);
+}
+
+/* Proverava da li je promenljiva vec deklarisana i da li
+pocinje na slovo 'r'. Smesta promenljivu u listu. */
+void SyntaxAnalysis::AddRegVarToList(Token& t)
+{
+	string variableName = t.getValue();
+	Variable* variable = new Variable(variableName);
+
+	if (ContainsRegisterVar(*variable))
+	{
+		errorFound = true;
+		cout << "Registarska promenljiva: " << variableName << " je vec deklarisana." << endl;
+		return;
+	}
+	if (variableName.at(0) != 'r')
+	{
+		errorFound = true;
+		cout << "Registarska promenljiva: " << variableName << " mora da pocne sa slovom 'r'." << endl;
+		return;
+	}
+
+	registerVariables.push_back(variable);
+}
 
 bool SyntaxAnalysis::Do()
 {
@@ -95,73 +169,33 @@ void SyntaxAnalysis::s()
 	if (errorFound)
 		return;
 
-	string variableName;
-	Variable* variable;
-
 	switch (currentToken.getType())
 	{
 	case T_MEM: // _mem mid num
 		eat(T_MEM);
-
-		// Ubacujemo memorijsku promenljivu u listu
-		variableName = currentToken.getValue();
-		variable = new Variable(variableName);
+		AddMemVarToList(currentToken);
 		eat(T_M_ID);
 		eat(T_NUM);
-
-		if (ContainsMemoryVar(*variable))
-		{
-			errorFound = true;
-			cout << "Memorijska promenljiva: " << variableName << " je vec deklarisana." << endl;
-			return;
-		}
-		else if (variableName.at(0) == 'r')
-		{
-			errorFound = true;
-			cout << "Memorijska promenljiva: " << variableName << " mora da pocne sa slovom 'm'." << endl;
-			return;
-		}
-		memoryVariables.push_back(variable);
-		syntaxTree.push_back(new DeclStm(variable)); // @TODO: da li ce morati poseban declstm za reg. i mem.?
 		break;
 
 	case T_REG: // _reg rid
 		eat(T_REG);
-
-		// Ubacujemo registarsku promenljivu u listu
-		variableName = currentToken.getValue();
-		variable = new Variable(variableName);
+		AddRegVarToList(currentToken);
 		eat(T_R_ID);
-
-		if (ContainsRegisterVar(*variable))
-		{
-			errorFound = true;
-			cout << "Registarska promenljiva: " << variableName << " je vec deklarisana." << endl;
-			return;
-		}
-		else if (variableName.at(0) == 'r')
-		{
-			errorFound = true;
-			cout << "Registarska promenljiva: " << variableName << " mora da pocne sa slovom 'r'." << endl;
-			return;
-		}
-
-		registerVariables.push_back(variable);
-		syntaxTree.push_back(new DeclStm(variable));
 		break;
 
-	case T_FUNC:
+	case T_FUNC: // _func id
 		eat(T_FUNC);
 		eat(T_ID);
 		break;
 
-	case T_ID:
+	case T_ID: // id : e
 		eat(T_ID);
 		eat(T_COL);
 		e();
 		break;
 
-	default:
+	default: // e
 		e();
 	}
 }
@@ -186,80 +220,96 @@ void SyntaxAnalysis::e()
 
 	switch (currentToken.getType())
 	{
-	case T_ADD:
+	case T_ADD: // add rid,rid,rid
 		eat(T_ADD);
+		CheckRegVariableExistance(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
+		CheckRegVariableExistance(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
+		CheckRegVariableExistance(currentToken);
 		eat(T_R_ID);
 		break;
 
-	case T_ADDI:
+	case T_ADDI: // addi rid,rid,num
 		eat(T_ADDI);
+		CheckRegVariableExistance(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
+		CheckRegVariableExistance(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
 		eat(T_NUM);
 		break;
 
-	case T_SUB:
+	case T_SUB: // sub rid,rid,rid
 		eat(T_SUB);
+		CheckRegVariableExistance(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
+		CheckRegVariableExistance(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
+		CheckRegVariableExistance(currentToken);
 		eat(T_R_ID);
 		break;
 
-	case T_LA:
+	case T_LA: // la rid,mid
 		eat(T_LA);
+		CheckRegVariableExistance(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
+		CheckMemVariableExistance(currentToken);
 		eat(T_M_ID);
 		break;
 
-	case T_LW:
+	case T_LW: // lw rid, num(rid)
 		eat(T_LW);
+		CheckRegVariableExistance(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
 		eat(T_NUM);
 		eat(T_L_PARENT);
+		CheckRegVariableExistance(currentToken);
 		eat(T_R_ID);
 		eat(T_R_PARENT);
 		break;
 
-	case T_LI:
+	case T_LI: // li rid,num
 		eat(T_LI);
+		CheckRegVariableExistance(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
 		eat(T_NUM);
 		break;
 
-	case T_SW:
+	case T_SW: // sw rid,num(rid)
 		eat(T_SW);
+		CheckRegVariableExistance(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
 		eat(T_NUM);
 		eat(T_L_PARENT);
+		CheckRegVariableExistance(currentToken);
 		eat(T_R_ID);
 		eat(T_R_PARENT);
 		break;
 
-	case T_B:
+	case T_B: // b id
 		eat(T_B);
 		eat(T_ID);
 		break;
 	
-	case T_BLTZ:
+	case T_BLTZ: // bltz rid,id
 		eat(T_BLTZ);
+		CheckRegVariableExistance(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
 		eat(T_ID);
 		break;
 
-	case T_NOP:
+	case T_NOP: // nop
 		eat(T_NOP);
 		break;
 

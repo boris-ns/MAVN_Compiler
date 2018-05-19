@@ -30,12 +30,18 @@ public:
 
 private:
 
-	std::list<Statement*> syntaxTree;
 	Variables memoryVariables;
 	Variables registerVariables;
+	std::list<std::string> labels;
 
 	bool ContainsMemoryVar(Variable& var);
 	bool ContainsRegisterVar(Variable& var);
+	
+	void CheckMemVariableExistance(Token& t);
+	void CheckRegVariableExistance(Token& t);
+	
+	void AddMemVarToList(Token& t);
+	void AddRegVarToList(Token& t);
 
 	/* Reference to lexical analysis module */
 	LexicalAnalysis& lexicalAnalysis;
