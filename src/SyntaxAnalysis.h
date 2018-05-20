@@ -40,7 +40,10 @@ private:
 	std::list<std::string> functions;
 
 	Variable* ContainsMemoryVar(Variable& var);
+	Variable* ContainsMemoryVar(const std::string& varName);
 	Variable* ContainsRegisterVar(Variable& var);
+	Variable* ContainsRegisterVar(const std::string& varName);
+
 	bool ContainsLabel(const std::string& id);
 	bool ContainsFunction(const std::string& id);
 

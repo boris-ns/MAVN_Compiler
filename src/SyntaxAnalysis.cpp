@@ -1,5 +1,6 @@
 #include <iostream>
 #include <algorithm>
+#include <regex>
 #include "SyntaxAnalysis.h"
 #include "Tree.h"
 
@@ -34,6 +35,30 @@ Variable* SyntaxAnalysis::ContainsRegisterVar(Variable& var)
 	return NULL;
 }
 
+/* Proverava da li je mem. promenljiva deklarisana. */
+Variable* SyntaxAnalysis::ContainsMemoryVar(const std::string& varName)
+{
+	for (Variables::iterator it = memoryVariables.begin(); it != memoryVariables.end(); it++)
+	{
+		if ((*it)->getName() == varName)
+			return (*it);
+	}
+
+	return NULL;
+}
+
+/* Proverava da li je reg. promenljiva deklarisana. */
+Variable* SyntaxAnalysis::ContainsRegisterVar(const std::string& varName)
+{
+	for (Variables::iterator it = registerVariables.begin(); it != registerVariables.end(); it++)
+	{
+		if ((*it)->getName() == varName)
+			return (*it);
+	}
+
+	return NULL;
+}
+
 /* Proverava da li je labela prethodno definisana. */
 bool SyntaxAnalysis::ContainsLabel(const std::string& id)
 {
@@ -42,7 +67,7 @@ bool SyntaxAnalysis::ContainsLabel(const std::string& id)
 		it++)
 	{
 		if (*it == id)
-			return true;
+return true;
 	}
 
 	return false;
@@ -62,7 +87,7 @@ bool SyntaxAnalysis::ContainsFunction(const std::string& id)
 	return false;
 }
 
-/* Proverava da li se promenljiva koja se moze napraviti od 
+/* Proverava da li se promenljiva koja se moze napraviti od
    tokena nalazi u listi memorijskih promenljivih */
 void SyntaxAnalysis::CheckMemVariableExistance(Token& t)
 {
@@ -90,17 +115,17 @@ void SyntaxAnalysis::CheckRegVariableExistance(Token& t)
 	}
 }
 
-/* Proverava da li je promenljiva vec deklarisana i da li 
+/* Proverava da li je promenljiva vec deklarisana i da li
    pocinje na slovo 'm'. Smesta promenljivu u listu. */
 void SyntaxAnalysis::AddMemVarToList(Token& t)
 {
 	string variableName = t.getValue();
 	Variable* variable = new Variable(variableName);
 
-	if (variableName.at(0) != 'm') 
+	if (!regex_match(variableName, regex("m[0-9]+")))
 	{
 		errorFound = true;
-		cout << "Memorijska promenljiva: " << variableName << " mora da pocne sa slovom 'm'." << endl;
+		cout << "Memorijska promenljiva: " << variableName << " nije dobro definisana." << endl;
 		return;
 	}
 	if (ContainsMemoryVar(*variable) != NULL)
@@ -120,10 +145,10 @@ void SyntaxAnalysis::AddRegVarToList(Token& t)
 	string variableName = t.getValue();
 	Variable* variable = new Variable(variableName);
 
-	if (variableName.at(0) != 'r') // @TODO: dodati proveru da li je ostatak broj, regex ? isto i gore!
+	if (!regex_match(variableName, regex("r[0-9]+")))
 	{
 		errorFound = true;
-		cout << "Registarska promenljiva: " << variableName << " mora da pocne sa slovom 'r'." << endl;
+		cout << "Registarska promenljiva: " << variableName << " nije dobro definisana." << endl;
 		return;
 	}
 	if (ContainsRegisterVar(*variable) != NULL)
@@ -140,8 +165,12 @@ void SyntaxAnalysis::AddFunctionToList(Token& t)
 {
 	string funcName = t.getValue();
 
-	// @TODO: provera da li funcName pocinje slovom
-
+	if (!regex_match(funcName, regex("[A-Za-z]+[A-Za-z0-9]*")))
+	{
+		cout << "Funkcija " << funcName << " nema ime u skladu sa pravilima." << endl;
+		errorFound = true;
+		return;
+	}
 	if (ContainsFunction(funcName))
 	{
 		cout << "Funkcija " << funcName << " je vec definisana." << endl;
@@ -171,17 +200,52 @@ void SyntaxAnalysis::AddLabelToList(Token& t)
 // @TODO: FINISH THIS
 // Idea: maybe big switch case for every instruction ?
 // or to do everything in e ?
+// dst - da li mora da bude vektor ili je uvek samo 1 element ?
 void SyntaxAnalysis::CreateInstruction(InstructionType type, vector<Token>& dst, vector<Token>& src)
 {
-	Variables destVars, srcVars;
+	Variables* destVars = new Variables;
+	Variables* srcVars = new Variables;
 
-	for (size_t i = 0; i < dst.size(); ++i)
+	switch (type)
 	{
-		//destVars.push_back(ContainsRegisterVar());
+	case I_ADD: // add rid,rid,rid
+	case I_SUB: // sub rid,rid,rid
+		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
+		srcVars->push_back(ContainsRegisterVar(src[0].getValue()));
+		srcVars->push_back(ContainsRegisterVar(src[1].getValue()));
+		break;
+
+	case I_ADDI: // addi rid,rid,num
+		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
+		srcVars->push_back(ContainsRegisterVar(src[0].getValue()));
+		break;
+
+	case I_LA: // la rid,mid
+		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
+		srcVars->push_back(ContainsMemoryVar(src[0].getValue()));
+		break;
+
+	case I_LW: // lw rid,num(rid)
+	case I_SW:
+		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
+		//@TODO: sta sa num(rid) ????
+		break;
+
+	case I_LI: // li rid,num
+		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
+		break;
+
+	case I_BLTZ: // bltz rid,id
+		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
+		break;
+
+	case I_B:   // b id
+	case I_NOP: // nop
+		break;
 	}
 
-	// @TOOD: what is pos - 0 ??!
-	Instruction* instr = new Instruction(0, type, destVars, srcVars);
+	Instruction* instr = new Instruction(0, type, *destVars, *srcVars);
+	instructions.push_back(instr);
 }
 
 bool SyntaxAnalysis::Do()
@@ -302,100 +366,104 @@ void SyntaxAnalysis::e()
 	{
 	case T_ADD: // add rid,rid,rid
 		eat(T_ADD);
-		CheckRegVariableExistance(currentToken);
 		dst.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
-		CheckRegVariableExistance(currentToken);
 		src.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
-		CheckRegVariableExistance(currentToken);
 		src.push_back(currentToken);
 		eat(T_R_ID);
-
 		CreateInstruction(I_ADD, dst, src);
 		break;
 
 	case T_ADDI: // addi rid,rid,num
 		eat(T_ADDI);
-		CheckRegVariableExistance(currentToken);
+		dst.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
-		CheckRegVariableExistance(currentToken);
+		src.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
 		eat(T_NUM);
+		CreateInstruction(I_ADDI, dst, src);
 		break;
 
 	case T_SUB: // sub rid,rid,rid
 		eat(T_SUB);
-		CheckRegVariableExistance(currentToken);
+		dst.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
-		CheckRegVariableExistance(currentToken);
+		src.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
-		CheckRegVariableExistance(currentToken);
 		eat(T_R_ID);
+		CreateInstruction(I_SUB, dst, src);
 		break;
 
 	case T_LA: // la rid,mid
 		eat(T_LA);
-		CheckRegVariableExistance(currentToken);
+		dst.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
-		CheckMemVariableExistance(currentToken);
+		src.push_back(currentToken);
 		eat(T_M_ID);
+		CreateInstruction(I_LA, dst, src);
 		break;
 
 	case T_LW: // lw rid, num(rid)
 		eat(T_LW);
-		CheckRegVariableExistance(currentToken);
+		dst.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
 		eat(T_NUM);
 		eat(T_L_PARENT);
-		CheckRegVariableExistance(currentToken);
+		src.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_R_PARENT);
+		CreateInstruction(I_LW, dst, src);
 		break;
 
 	case T_LI: // li rid,num
 		eat(T_LI);
-		CheckRegVariableExistance(currentToken);
+		dst.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
 		eat(T_NUM);
+		CreateInstruction(I_LI, dst, src);
 		break;
 
 	case T_SW: // sw rid,num(rid)
 		eat(T_SW);
-		CheckRegVariableExistance(currentToken);
+		dst.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
 		eat(T_NUM);
 		eat(T_L_PARENT);
-		CheckRegVariableExistance(currentToken);
+		src.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_R_PARENT);
+		CreateInstruction(I_SW, dst, src);
 		break;
 
 	case T_B: // b id
 		eat(T_B);
 		eat(T_ID);
+		CreateInstruction(I_B, dst, src);
 		break;
 	
 	case T_BLTZ: // bltz rid,id
 		eat(T_BLTZ);
-		CheckRegVariableExistance(currentToken);
+		dst.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
 		eat(T_ID);
+		CreateInstruction(I_BLTZ, dst, src);
 		break;
 
 	case T_NOP: // nop
 		eat(T_NOP);
+		CreateInstruction(I_NOP, dst, src);
 		break;
 
 	default:
