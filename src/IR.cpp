@@ -1,5 +1,119 @@
 #include "IR.h"
 
+bool ContainsVariable(Variable& variable, Variables& variableList)
+{
+	for (Variables::const_iterator it = variableList.begin();
+		it != variableList.end();
+		it++)
+	{
+		if (variable.getName() == (*it)->getName())
+			return true;
+	}
+
+	return false;
+}
+
+void LivenessAnalysis(Instructions& instructions)
+{
+	bool again = true;
+	while (again)
+	{
+		again = false;
+
+		for (Instructions::reverse_iterator it = instructions.rbegin();
+			it != instructions.rend();
+			it++)
+		{
+			Variables newOut, newIn;
+			Variables& out = (*it)->m_out;
+			Variables& in = (*it)->m_in;
+		
+			// Kreiranje newOut
+			Instructions& successors = (*it)->m_succ;
+			for (Instructions::iterator succIt = successors.begin();
+				succIt != successors.end();
+				succIt++)
+			{
+				Variables& succIn = (*succIt)->m_in;
+				newOut.insert(newOut.end(), succIn.begin(), succIn.end());
+			}
+
+			newOut.sort();
+			newOut.unique();
+		
+			// Kreiranje newIn
+			Variables& use = (*it)->m_use;
+			Variables& def = (*it)->m_def;
+			Variables outMinusDef;
+
+			for (Variables::iterator varIt = out.begin();
+				varIt != out.end();
+				varIt++)
+			{
+				if (!ContainsVariable(*(*varIt), def))
+					outMinusDef.push_back(*varIt);
+			}
+
+			newIn = use;
+			newIn.insert(newIn.end(), outMinusDef.begin(), outMinusDef.end());
+			newIn.sort();
+			newIn.unique();
+
+			if (newIn != in || newOut != out)
+				again = true;
+
+			in = newIn;
+			out = newOut;
+		}
+	}
+}
+
+void PrintInstructions(Instructions& instructions)
+{
+	for (Instructions::iterator it = instructions.begin();
+		it != instructions.begin();
+		it++)
+	{
+		(*it)->PrintInstruction();
+	}
+}
+
+InterferenceGraph& BuildInterferenceGraph(Instructions& instructions)
+{
+	ig.variables = &getVariables();
+
+	InterferenceMatrix interference_matrix;
+	interference_matrix.resize(ig.variables->size());
+	
+	for (int i = 0; i < interference_matrix.size(); ++i)
+		interference_matrix.at(i).resize(interference_matrix.size());
+	
+	ig.matrix = interference_matrix;
+
+	Instructions::iterator iter = instructions.begin();
+	for (iter; iter != instructions.end(); ++iter)
+	{
+		if ((*iter)->type != InstructionType::move)
+		{
+			Variables::iterator var_iter = (*iter)->def.begin();
+			for (var_iter; var_iter != (*iter)->def.end(); ++var_iter)
+			{
+				Variables::iterator var_iter_ = (*iter)->out.begin();
+				for (var_iter_; var_iter_ != (*iter)->out.end(); ++var_iter_)
+				{
+					if ((*var_iter)->pos != (*var_iter_)->pos)
+					{
+						ig.matrix.at((*var_iter)->pos).at((*var_iter_)->pos) = __INTERFERENCE__;
+						ig.matrix.at((*var_iter_)->pos).at((*var_iter)->pos) = __INTERFERENCE__;
+					}
+				}
+			}
+		}
+	}
+
+	return ig;
+}
+
 /////////// Variable
 
 Variable::Variable(std::string name, int pos)
@@ -7,15 +121,11 @@ Variable::Variable(std::string name, int pos)
 {
 }
 
-bool Variable::operator==(const Variable& var)
-{
-	return (m_name == var.m_name) ? true : false;
-}
-
 std::string Variable::getName() 
 { 
 	return m_name;
 }
+
 
 /////////// Instruction
 
@@ -56,6 +166,11 @@ void Instruction::FillUseDefVariables()
 	case I_NOP: // nop
 		break;
 	}
+}
+
+void Instruction::PrintInstruction()
+{
+
 }
 
 InstructionType Instruction::getType()

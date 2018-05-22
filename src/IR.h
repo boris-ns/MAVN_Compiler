@@ -4,6 +4,11 @@
 #include "Types.h"
 #include "RegisterAllocation.h"
 
+bool ContainsVariable(Variable& variable, Variables& variableList);
+void LivenessAnalysis(Instructions& instructions);
+void PrintInstructions(Instructions& instructions);
+
+
 /* This class represents one variable from program code. */
 class Variable
 {
@@ -20,8 +25,6 @@ public:
 	Variable(std::string name) : m_name(name), m_type(NO_TYPE), m_position(-1), m_assignment(no_assign) {}
 
 	Variable(std::string name, int pos);
-
-	bool operator==(const Variable& var);
 	std::string getName();
 
 private:
@@ -43,11 +46,17 @@ public:
 	Instruction();
 	Instruction(int pos, InstructionType type, Variables& dst, Variables& src, const std::string& labelName);
 
-	std::list<Instruction*> m_succ;
-	std::list<Instruction*> m_pred;
-
 	InstructionType getType();
 	std::string getLabelName();
+	void PrintInstruction();
+
+	std::vector<Instruction*> m_succ;
+	std::vector<Instruction*> m_pred;
+
+	Variables m_use;
+	Variables m_def;
+	Variables m_in;
+	Variables m_out;
 
 private:
 	void FillUseDefVariables();
@@ -58,10 +67,6 @@ private:
 	
 	Variables m_dst;
 	Variables m_src;
-	Variables m_use;
-	Variables m_def;
-	Variables m_in;
-	Variables m_out;
 };
 
 

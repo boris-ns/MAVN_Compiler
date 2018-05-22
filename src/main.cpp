@@ -60,6 +60,8 @@ void main()
 		// Finishing instruction creation
 		syntax.FillSuccessors();
 		syntax.FillPredecessor();
+
+		LivenessAnalysis(instructions);
 	}
 	catch (runtime_error e)
 	{
