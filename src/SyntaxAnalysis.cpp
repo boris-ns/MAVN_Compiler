@@ -6,7 +6,8 @@
 
 using namespace std;
 
-SyntaxAnalysis::SyntaxAnalysis(LexicalAnalysis& lex) : lexicalAnalysis(lex), errorFound(false)
+SyntaxAnalysis::SyntaxAnalysis(LexicalAnalysis& lex, Instructions& instr) 
+	: lexicalAnalysis(lex), errorFound(false), instructions(instr), instructionCounter(0)
 {
 	tokenIterator = lexicalAnalysis.getTokenList().begin();
 }
@@ -62,12 +63,12 @@ Variable* SyntaxAnalysis::ContainsRegisterVar(const std::string& varName)
 /* Proverava da li je labela prethodno definisana. */
 bool SyntaxAnalysis::ContainsLabel(const std::string& id)
 {
-	for (list<string>::iterator it = labels.begin();
+	for (map<string, int>::iterator it = labels.begin();
 		it != labels.end();
 		it++)
 	{
-		if (*it == id)
-return true;
+		if (it->first == id)
+			return true;
 	}
 
 	return false;
@@ -181,12 +182,8 @@ void SyntaxAnalysis::AddFunctionToList(Token& t)
 	functions.push_back(funcName);
 }
 
-void SyntaxAnalysis::AddLabelToList(Token& t)
+void SyntaxAnalysis::AddLabelToList(const std::string& labelName, int pos)
 {
-	string labelName = t.getValue();
-
-	// @TODO: da li ovde ima neko ogranicenje za ime ?
-
 	if (ContainsLabel(labelName))
 	{
 		cout << "Labela " << labelName << " je vec definisana." << endl;
@@ -194,17 +191,15 @@ void SyntaxAnalysis::AddLabelToList(Token& t)
 		return;
 	}
 
-	labels.push_back(labelName);
+	labels[labelName] = pos;
 }
 
-// @TODO: FINISH THIS
-// Idea: maybe big switch case for every instruction ?
-// or to do everything in e ?
 // dst - da li mora da bude vektor ili je uvek samo 1 element ?
 void SyntaxAnalysis::CreateInstruction(InstructionType type, vector<Token>& dst, vector<Token>& src)
 {
 	Variables* destVars = new Variables;
 	Variables* srcVars = new Variables;
+	string labelName = "";
 
 	switch (type)
 	{
@@ -236,16 +231,52 @@ void SyntaxAnalysis::CreateInstruction(InstructionType type, vector<Token>& dst,
 		break;
 
 	case I_BLTZ: // bltz rid,id
-		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
+		srcVars->push_back(ContainsRegisterVar(src[0].getValue()));
+		labelName = dst[0].getValue();
 		break;
 
 	case I_B:   // b id
+		labelName = dst[0].getValue();
+		break;
+
 	case I_NOP: // nop
 		break;
 	}
 
-	Instruction* instr = new Instruction(0, type, *destVars, *srcVars);
+	Instruction* instr = new Instruction(instructionCounter, type, *destVars, *srcVars, labelName);
 	instructions.push_back(instr);
+	++instructionCounter;
+}
+
+void SyntaxAnalysis::FillSuccessors()
+{
+	for (Instructions::iterator it = instructions.begin();
+		it != instructions.end() - 1;
+		it++)
+	{
+		(*it)->m_succ.push_back(*(it + 1));
+
+		// Ako je instrukcija tipa JUMP onda treba dodati jos jednog naslednika
+		if ((*it)->getType() == I_B || (*it)->getType() == I_BLTZ)
+		{
+			int instrPosition = labels[(*it)->getLabelName()];
+			Instruction* instrToJump = instructions.at(instrPosition);
+			(*it)->m_succ.push_back(instrToJump);
+
+			// Kad smo vec dosli do instr. na koju se skace, dodamo i prethodnika (trenutnu instr.)
+			instrToJump->m_pred.push_back(*it);
+		}
+	}
+}
+
+void SyntaxAnalysis::FillPredecessor()
+{
+	for (Instructions::reverse_iterator it = instructions.rbegin();
+		it != instructions.rend() - 1;
+		it++)
+	{
+		(*it)->m_pred.push_back(*(it + 1));
+	}
 }
 
 bool SyntaxAnalysis::Do()
@@ -271,6 +302,9 @@ void SyntaxAnalysis::printSyntaxError(Token& token)
 
 void SyntaxAnalysis::eat(TokenType t)
 {
+	if (errorFound)
+		return;
+
 	if (currentToken.getType() == t)
 	{
 		currentToken.printTokenValue();
@@ -295,9 +329,6 @@ Token SyntaxAnalysis::getNextToken()
 
 void SyntaxAnalysis::q()
 {
-	if (errorFound)
-		return;
-
 	s();
 	eat(T_SEMI_COL);
 	l();
@@ -306,8 +337,7 @@ void SyntaxAnalysis::q()
 
 void SyntaxAnalysis::s()
 {
-	if (errorFound)
-		return;
+	string name;
 
 	switch (currentToken.getType())
 	{
@@ -331,8 +361,9 @@ void SyntaxAnalysis::s()
 		break;
 
 	case T_ID: // id : e
-		AddLabelToList(currentToken);
+		name = currentToken.getValue();
 		eat(T_ID);
+		AddLabelToList(name, instructionCounter);
 		eat(T_COL);
 		e();
 		break;
@@ -345,9 +376,6 @@ void SyntaxAnalysis::s()
 
 void SyntaxAnalysis::l()
 {
-	if (errorFound)
-		return;
-
 	if (currentToken.getType() == T_END_OF_FILE)
 		eat(T_END_OF_FILE);
 	else
@@ -357,9 +385,6 @@ void SyntaxAnalysis::l()
 
 void SyntaxAnalysis::e()
 {
-	if (errorFound)
-		return;
-
 	vector<Token> src, dst;
 
 	switch (currentToken.getType())
@@ -448,15 +473,17 @@ void SyntaxAnalysis::e()
 
 	case T_B: // b id
 		eat(T_B);
+		dst.push_back(currentToken);
 		eat(T_ID);
 		CreateInstruction(I_B, dst, src);
 		break;
 	
 	case T_BLTZ: // bltz rid,id
 		eat(T_BLTZ);
-		dst.push_back(currentToken);
+		src.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
+		dst.push_back(currentToken);
 		eat(T_ID);
 		CreateInstruction(I_BLTZ, dst, src);
 		break;

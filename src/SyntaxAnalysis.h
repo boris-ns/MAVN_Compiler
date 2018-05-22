@@ -9,7 +9,7 @@ class SyntaxAnalysis
 {
 public:
 
-	SyntaxAnalysis(LexicalAnalysis& lex);
+	SyntaxAnalysis(LexicalAnalysis& lex, Instructions& instr);
 
 	/* Method which performs lexical analysis */
 	bool Do();
@@ -28,15 +28,25 @@ public:
 	/* Returns the next token from the token list */
 	Token getNextToken();
 
+	void FillSuccessors();
+	void FillPredecessor();
+
 private:
 
+	/* Iterator to the token list which represents the output of the lexical analysis */
+	TokenList::iterator tokenIterator;
+	LexicalAnalysis& lexicalAnalysis; /* Reference to lexical analysis module */
+	Token currentToken;               /* Current token that is being analyzed */
+	bool errorFound;                  /* Syntax error indicator */
+	int instructionCounter;           /* Counts instructions */
+
+	Instructions& instructions;
 	Variables memoryVariables;
 	Variables registerVariables;
-	Instructions instructions;
 
-	// @TODO: da li labele i funkcije posmatramo kao istu stvar ?
 	// @TODO: dodati proveru za postojanje labele i funkcije kod b i bltz
-	std::list<std::string> labels;
+	// Mapa sadrzi ime labele i poziciju instrukcije koja sledi nakon tabele
+	std::map<std::string, int> labels;
 	std::list<std::string> functions;
 
 	Variable* ContainsMemoryVar(Variable& var);
@@ -53,32 +63,13 @@ private:
 	void AddMemVarToList(Token& t);
 	void AddRegVarToList(Token& t);
 	void AddFunctionToList(Token& t);
-	void AddLabelToList(Token& t);
+	void AddLabelToList(const std::string& labelName, int pos);
 
 	void CreateInstruction(InstructionType type, vector<Token>& dst, vector<Token>& src);
 
-	/* Reference to lexical analysis module */
-	LexicalAnalysis& lexicalAnalysis;
-
-	/* Iterator to the token list which represents the output of the lexical analysis */
-	TokenList::iterator tokenIterator;
-
-	/* Current token that is being analyzed */
-	Token currentToken;
-
-	/* Nonterminal Q */
-	void q();
-
-	/* Nonterminal S */
-	void s();
-
-	/* Nonterminal L */
-	void l();
-
-	/* Nonterminal E */
-	void e();
-
-	/* Syntax error indicator */
-	bool errorFound;
+	void q(); /* Nonterminal Q */
+	void s(); /* Nonterminal S */
+	void l(); /* Nonterminal L */
+	void e(); /* Nonterminal E */
 };
 

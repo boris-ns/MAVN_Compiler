@@ -44,7 +44,8 @@ void main()
 			 << endl << "Starting syntax analysis" << endl;
 
 		// Run syntax analysis
-		SyntaxAnalysis syntax(lex);
+		Instructions instructions;
+		SyntaxAnalysis syntax(lex, instructions);
 		retVal = syntax.Do();
 
 		if (retVal)
@@ -55,6 +56,10 @@ void main()
 		{
 			throw runtime_error("\nException! Syntax analysis failed!\n");
 		}
+
+		// Finishing instruction creation
+		syntax.FillSuccessors();
+		syntax.FillPredecessor();
 	}
 	catch (runtime_error e)
 	{
