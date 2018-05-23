@@ -62,11 +62,21 @@ void main()
 		syntax.FillSuccessors();
 		syntax.FillPredecessor();
 
+		cout << endl << "------------------------------------" << endl;
+		cout << endl << "Instruction list" << endl << endl;
+		PrintInstructions(instructions);
+
+		// Liveness analysis
 		LivenessAnalysis(instructions);
+
+		cout << endl << "Instruction list after liveness analysis" << endl << endl;
+		PrintInstructions(instructions);
 
 		// Interference graph
 		InterferenceGraph ig(syntax.GetRegVariables());
 		ig.BuildInterferenceGraph(instructions);
+		ig.BuildVariableStack();
+		ig.ResourceAllocation();
 	}
 	catch (runtime_error e)
 	{

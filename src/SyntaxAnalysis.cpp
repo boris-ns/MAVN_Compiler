@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <regex>
 #include "SyntaxAnalysis.h"
-#include "Tree.h"
 
 using namespace std;
 
@@ -121,7 +120,7 @@ void SyntaxAnalysis::CheckRegVariableExistance(Token& t)
 void SyntaxAnalysis::AddMemVarToList(Token& t)
 {
 	string variableName = t.getValue();
-	Variable* variable = new Variable(variableName);
+	Variable* variable = new Variable(variableName, 0, Variable::MEM_VAR);
 
 	if (!regex_match(variableName, regex("m[0-9]+")))
 	{
@@ -144,7 +143,7 @@ pocinje na slovo 'r'. Smesta promenljivu u listu. */
 void SyntaxAnalysis::AddRegVarToList(Token& t)
 {
 	string variableName = t.getValue();
-	Variable* variable = new Variable(variableName, variableCounter);
+	Variable* variable = new Variable(variableName, variableCounter, Variable::REG_VAR);
 	++variableCounter;
 
 	if (!regex_match(variableName, regex("r[0-9]+")))

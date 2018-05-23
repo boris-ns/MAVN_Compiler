@@ -81,10 +81,8 @@
     <ClInclude Include="InterferenceGraph.h" />
     <ClInclude Include="IR.h" />
     <ClInclude Include="LexicalAnalysis.h" />
-    <ClInclude Include="RegisterAllocation.h" />
     <ClInclude Include="SyntaxAnalysis.h" />
     <ClInclude Include="Token.h" />
-    <ClInclude Include="Tree.h" />
     <ClInclude Include="Types.h" />
   </ItemGroup>
   <ItemGroup>
@@ -93,7 +91,6 @@
     <ClCompile Include="IR.cpp" />
     <ClCompile Include="LexicalAnalysis.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="RegisterAllocation.cpp" />
     <ClCompile Include="SyntaxAnalysis.cpp" />
     <ClCompile Include="Token.cpp" />
   </ItemGroup>

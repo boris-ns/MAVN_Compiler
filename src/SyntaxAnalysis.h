@@ -3,7 +3,6 @@
 #include "LexicalAnalysis.h"
 #include "Token.h"
 #include "IR.h"
-#include "Tree.h"
 
 class SyntaxAnalysis
 {

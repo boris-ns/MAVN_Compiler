@@ -1,4 +1,7 @@
 #include "IR.h"
+#include <iostream>
+
+using namespace std;
 
 bool ContainsVariable(Variable& variable, Variables& variableList)
 {
@@ -71,17 +74,18 @@ void LivenessAnalysis(Instructions& instructions)
 void PrintInstructions(Instructions& instructions)
 {
 	for (Instructions::iterator it = instructions.begin();
-		it != instructions.begin();
+		it != instructions.end();
 		it++)
 	{
 		(*it)->PrintInstruction();
+		cout << "--------------------------------------" << endl;
 	}
 }
 
 /////////// Variable
 
-Variable::Variable(std::string name, int pos)
-	: m_type(NO_TYPE), m_name(name), m_position(pos), m_assignment(no_assign)
+Variable::Variable(std::string name, int pos, VariableType type)
+	: m_type(type), m_name(name), m_position(pos), m_assignment(no_assign)
 {
 }
 
@@ -93,6 +97,23 @@ std::string Variable::getName()
 int Variable::GetPos()
 {
 	return m_position;
+}
+
+Variable::VariableType Variable::GetType()
+{
+	return m_type;
+}
+
+void Variable::SetAssignment(Regs r)
+{
+	m_assignment = r;
+}
+
+std::ostream& operator<<(std::ostream& out, const Variable& v)
+{
+	out << v.m_name;
+
+	return out;
 }
 
 /////////// Instruction
@@ -136,9 +157,35 @@ void Instruction::FillUseDefVariables()
 	}
 }
 
+void PrintVariables(const Variables& vars)
+{
+	for (Variables::const_iterator it = vars.begin(); it != vars.end(); it++)
+		cout << *(*it) << " ";
+}
+
 void Instruction::PrintInstruction()
 {
+	cout << "Instruction " << m_position << endl;
 
+	cout << "SRC: ";
+	PrintVariables(m_src);
+
+	cout << endl << "DEST: ";
+	PrintVariables(m_dst);
+
+	cout << endl << "USE: ";
+	PrintVariables(m_use);
+
+	cout << endl << "DEF: ";
+	PrintVariables(m_def);
+
+	cout << endl << "IN: ";
+	PrintVariables(m_in);
+
+	cout << endl << "OUT: ";
+	PrintVariables(m_out);
+
+	cout << endl;
 }
 
 InstructionType Instruction::getType()

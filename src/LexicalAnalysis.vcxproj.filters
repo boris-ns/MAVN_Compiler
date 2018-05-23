@@ -33,13 +33,7 @@
     <ClInclude Include="IR.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="RegisterAllocation.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SyntaxAnalysis.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Tree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="InterferenceGraph.h">
@@ -57,9 +51,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="RegisterAllocation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SyntaxAnalysis.cpp">

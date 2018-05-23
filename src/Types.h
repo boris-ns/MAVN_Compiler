@@ -71,7 +71,7 @@ enum InstructionType
 /**
  * Reg names.
  */
-enum RegsType
+enum Regs
 {
 	no_assign = 0,
 	t0,
