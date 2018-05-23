@@ -7,7 +7,7 @@
 using namespace std;
 
 SyntaxAnalysis::SyntaxAnalysis(LexicalAnalysis& lex, Instructions& instr) 
-	: lexicalAnalysis(lex), errorFound(false), instructions(instr), instructionCounter(0)
+	: lexicalAnalysis(lex), errorFound(false), instructions(instr), instructionCounter(0), variableCounter(0)
 {
 	tokenIterator = lexicalAnalysis.getTokenList().begin();
 }
@@ -144,7 +144,8 @@ pocinje na slovo 'r'. Smesta promenljivu u listu. */
 void SyntaxAnalysis::AddRegVarToList(Token& t)
 {
 	string variableName = t.getValue();
-	Variable* variable = new Variable(variableName);
+	Variable* variable = new Variable(variableName, variableCounter);
+	++variableCounter;
 
 	if (!regex_match(variableName, regex("r[0-9]+")))
 	{
@@ -496,4 +497,9 @@ void SyntaxAnalysis::e()
 	default:
 		errorFound = true;
 	}
+}
+
+Variables& SyntaxAnalysis::GetRegVariables()
+{
+	return registerVariables;
 }

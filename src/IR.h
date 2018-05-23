@@ -4,11 +4,6 @@
 #include "Types.h"
 #include "RegisterAllocation.h"
 
-bool ContainsVariable(Variable& variable, Variables& variableList);
-void LivenessAnalysis(Instructions& instructions);
-void PrintInstructions(Instructions& instructions);
-
-
 /* This class represents one variable from program code. */
 class Variable
 {
@@ -26,6 +21,7 @@ public:
 
 	Variable(std::string name, int pos);
 	std::string getName();
+	int GetPos();
 
 private:
 	VariableType m_type;
@@ -72,3 +68,7 @@ private:
 
 /* This type represents list of instructions from program code. */
 typedef std::vector<Instruction*> Instructions;
+
+bool ContainsVariable(Variable& variable, Variables& variableList);
+void LivenessAnalysis(Instructions& instructions);
+void PrintInstructions(Instructions& instructions);

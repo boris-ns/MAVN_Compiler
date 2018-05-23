@@ -30,6 +30,7 @@ public:
 
 	void FillSuccessors();
 	void FillPredecessor();
+	Variables& GetRegVariables();
 
 private:
 
@@ -39,6 +40,7 @@ private:
 	Token currentToken;               /* Current token that is being analyzed */
 	bool errorFound;                  /* Syntax error indicator */
 	int instructionCounter;           /* Counts instructions */
+	int variableCounter;              /* Counts variables */
 
 	Instructions& instructions;
 	Variables memoryVariables;

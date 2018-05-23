@@ -78,42 +78,6 @@ void PrintInstructions(Instructions& instructions)
 	}
 }
 
-InterferenceGraph& BuildInterferenceGraph(Instructions& instructions)
-{
-	ig.variables = &getVariables();
-
-	InterferenceMatrix interference_matrix;
-	interference_matrix.resize(ig.variables->size());
-	
-	for (int i = 0; i < interference_matrix.size(); ++i)
-		interference_matrix.at(i).resize(interference_matrix.size());
-	
-	ig.matrix = interference_matrix;
-
-	Instructions::iterator iter = instructions.begin();
-	for (iter; iter != instructions.end(); ++iter)
-	{
-		if ((*iter)->type != InstructionType::move)
-		{
-			Variables::iterator var_iter = (*iter)->def.begin();
-			for (var_iter; var_iter != (*iter)->def.end(); ++var_iter)
-			{
-				Variables::iterator var_iter_ = (*iter)->out.begin();
-				for (var_iter_; var_iter_ != (*iter)->out.end(); ++var_iter_)
-				{
-					if ((*var_iter)->pos != (*var_iter_)->pos)
-					{
-						ig.matrix.at((*var_iter)->pos).at((*var_iter_)->pos) = __INTERFERENCE__;
-						ig.matrix.at((*var_iter_)->pos).at((*var_iter)->pos) = __INTERFERENCE__;
-					}
-				}
-			}
-		}
-	}
-
-	return ig;
-}
-
 /////////// Variable
 
 Variable::Variable(std::string name, int pos)
@@ -126,6 +90,10 @@ std::string Variable::getName()
 	return m_name;
 }
 
+int Variable::GetPos()
+{
+	return m_position;
+}
 
 /////////// Instruction
 

@@ -10,6 +10,7 @@
 #include <exception>
 #include "LexicalAnalysis.h"
 #include "SyntaxAnalysis.h"
+#include "InterferenceGraph.h"
 
 using namespace std;
 
@@ -62,6 +63,10 @@ void main()
 		syntax.FillPredecessor();
 
 		LivenessAnalysis(instructions);
+
+		// Interference graph
+		InterferenceGraph ig(syntax.GetRegVariables());
+		ig.BuildInterferenceGraph(instructions);
 	}
 	catch (runtime_error e)
 	{

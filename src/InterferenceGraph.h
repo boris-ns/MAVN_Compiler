@@ -3,18 +3,25 @@
 #include <vector>
 #include "IR.h"
 
-typedef std::vector<std::vector<int>> InterferenceMatrix;
+#define __NO_INTERFERENCE__ 0
+#define __INTERFERENCE__    1
 
+typedef std::vector<std::vector<int>> InterferenceMatrix;
 
 class InterferenceGraph
 {
 public:
-	InterferenceGraph();
+	InterferenceGraph(Variables& vars);
 	~InterferenceGraph();
+
+	void BuildInterferenceGraph(Instructions& instructions);
 
 	InterferenceMatrix im;
 	Variables variables;
+
+private:
+
+	void ResizeInterferenceMatrix(size_t size);
+
+	Variables& regVariables;
 };
-
-
-InterferenceGraph& BuildInterferenceGraph(Instructions& instructions);
