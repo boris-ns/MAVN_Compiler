@@ -30,6 +30,11 @@ public:
 	void FillSuccessors();
 	void FillPredecessor();
 	Variables& GetRegVariables();
+	Variables& GetMemoryVariables();
+	std::list<std::string>& GetFunctions();
+	std::map<std::string, int>& GetLabels();
+
+	void CreateMIPSFile(const std::string& filePath);
 
 private:
 
@@ -40,6 +45,7 @@ private:
 	bool errorFound;                  /* Syntax error indicator */
 	int instructionCounter;           /* Counts instructions */
 	int variableCounter;              /* Counts variables */
+	std::string currentLabel;
 
 	Instructions& instructions;
 	Variables memoryVariables;

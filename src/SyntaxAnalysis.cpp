@@ -180,6 +180,7 @@ void SyntaxAnalysis::AddFunctionToList(Token& t)
 	}
 
 	functions.push_back(funcName);
+	AddLabelToList(funcName, instructionCounter);
 }
 
 void SyntaxAnalysis::AddLabelToList(const std::string& labelName, int pos)
@@ -192,6 +193,7 @@ void SyntaxAnalysis::AddLabelToList(const std::string& labelName, int pos)
 	}
 
 	labels[labelName] = pos;
+	currentLabel = labelName;
 }
 
 // dst - da li mora da bude vektor ili je uvek samo 1 element ?
@@ -200,6 +202,7 @@ void SyntaxAnalysis::CreateInstruction(InstructionType type, vector<Token>& dst,
 	Variables* destVars = new Variables;
 	Variables* srcVars = new Variables;
 	string labelName = "";
+	Instruction* instr;
 
 	switch (type)
 	{
@@ -208,42 +211,50 @@ void SyntaxAnalysis::CreateInstruction(InstructionType type, vector<Token>& dst,
 		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
 		srcVars->push_back(ContainsRegisterVar(src[0].getValue()));
 		srcVars->push_back(ContainsRegisterVar(src[1].getValue()));
+		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, labelName, currentLabel);
 		break;
 
 	case I_ADDI: // addi rid,rid,num
 		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
 		srcVars->push_back(ContainsRegisterVar(src[0].getValue()));
+		instr = new RelInstruction(instructionCounter, type, *destVars, *srcVars, stoi(src[1].getValue()), labelName, currentLabel);
 		break;
 
 	case I_LA: // la rid,mid
 		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
 		srcVars->push_back(ContainsMemoryVar(src[0].getValue()));
+		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, labelName, currentLabel);
 		break;
 
 	case I_LW: // lw rid,num(rid)
 	case I_SW:
 		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
-		//@TODO: sta sa num(rid) ????
+		srcVars->push_back(ContainsRegisterVar(src[1].getValue()));
+		instr = new RelInstruction(instructionCounter, type, *destVars, *srcVars, stoi(src[0].getValue()), labelName, currentLabel);
 		break;
 
 	case I_LI: // li rid,num
 		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
+		instr = new RelInstruction(instructionCounter, type, *destVars, *srcVars, stoi(src[0].getValue()), labelName, currentLabel);
 		break;
 
 	case I_BLTZ: // bltz rid,id
 		srcVars->push_back(ContainsRegisterVar(src[0].getValue()));
 		labelName = dst[0].getValue();
+		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, labelName, currentLabel);
 		break;
 
 	case I_B:   // b id
 		labelName = dst[0].getValue();
+		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, labelName, currentLabel);
 		break;
 
 	case I_NOP: // nop
+		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, labelName, currentLabel);
 		break;
 	}
 
-	Instruction* instr = new Instruction(instructionCounter, type, *destVars, *srcVars, labelName);
+	
 	instructions.push_back(instr);
 	++instructionCounter;
 }
@@ -410,6 +421,7 @@ void SyntaxAnalysis::e()
 		src.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
+		src.push_back(currentToken);
 		eat(T_NUM);
 		CreateInstruction(I_ADDI, dst, src);
 		break;
@@ -441,6 +453,7 @@ void SyntaxAnalysis::e()
 		dst.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
+		src.push_back(currentToken);
 		eat(T_NUM);
 		eat(T_L_PARENT);
 		src.push_back(currentToken);
@@ -454,6 +467,7 @@ void SyntaxAnalysis::e()
 		dst.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
+		src.push_back(currentToken);
 		eat(T_NUM);
 		CreateInstruction(I_LI, dst, src);
 		break;
@@ -463,6 +477,7 @@ void SyntaxAnalysis::e()
 		dst.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
+		src.push_back(currentToken);
 		eat(T_NUM);
 		eat(T_L_PARENT);
 		src.push_back(currentToken);
@@ -498,7 +513,54 @@ void SyntaxAnalysis::e()
 	}
 }
 
+void SyntaxAnalysis::CreateMIPSFile(const std::string& filePath)
+{
+	ofstream outFile(filePath);
+
+	for (list<string>::iterator it = functions.begin(); it != functions.end(); it++)
+		outFile << ".globl " << *it << "\n";
+
+	outFile << "\n.data\n";
+
+	// @TODO: DODAJ VALUE ZA PROMENLJIVE
+	for (Variables::iterator it = memoryVariables.begin(); it != memoryVariables.end(); it++)
+		outFile << (*it)->getName() << ": " << ".word " << "\n";
+
+	outFile << "\n.text\n";
+	int position = 0;
+	
+	for (map<string, int>::iterator it = labels.begin(); it != labels.end(); it++)
+	{
+		outFile << it->first << ":\n";
+
+		for (Instructions::iterator instr = instructions.begin(); instr != instructions.end(); instr++)
+		{
+			// Instrukcija ne odgovara trenutnoj labeli, znaci da smo zavrsili sa tom labelom
+			if ((*instr)->GetLabel() != it->first)
+				break;
+
+			outFile << "\t" << *(*instr) << "\n";
+		}
+	}
+
+	outFile.close();
+}
+
 Variables& SyntaxAnalysis::GetRegVariables()
 {
 	return registerVariables;
+}
+
+Variables& SyntaxAnalysis::GetMemoryVariables()
+{
+	return memoryVariables;
+}
+std::list<std::string>& SyntaxAnalysis::GetFunctions()
+{
+	return functions;
+}
+
+std::map<std::string, int>& SyntaxAnalysis::GetLabels()
+{
+	return labels;
 }

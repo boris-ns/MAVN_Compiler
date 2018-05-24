@@ -123,8 +123,8 @@ Instruction::Instruction()
 {
 }
 
-Instruction::Instruction(int pos, InstructionType type, Variables& dst, Variables& src, const std::string& labelName)
-	: m_position(pos), m_type(type), m_dst(dst), m_src(src) 
+Instruction::Instruction(int pos, InstructionType type, Variables& dst, Variables& src, const std::string& labelName, const std::string& currentLabel)
+	: m_position(pos), m_type(type), m_dst(dst), m_src(src), label(currentLabel)
 {
 	FillUseDefVariables();
 }
@@ -188,6 +188,37 @@ void Instruction::PrintInstruction()
 	cout << endl;
 }
 
+ostream& operator<<(ostream& out, const Instruction& i)
+{
+	switch (i.m_type)
+	{
+	case I_ADD: // add rid,rid,rid
+		out << "add " << 
+	case I_SUB: // sub rid,rid,rid
+	case I_ADDI: // addi rid,rid,num
+		m_def.insert(m_def.end(), m_dst.begin(), m_dst.end());
+		m_use.insert(m_use.end(), m_src.begin(), m_src.end());
+		break;
+
+	case I_LA: // la rid,mid
+	case I_LW: // lw rid,num(rid)
+	case I_LI: // li rid,num
+	case I_SW:
+		m_def.insert(m_def.end(), m_dst.begin(), m_dst.end());
+		break;
+
+	case I_BLTZ: // bltz rid,id
+		m_use.insert(m_use.end(), m_src.begin(), m_src.end());
+		break;
+
+	case I_B:   // b id
+	case I_NOP: // nop
+		break;
+	}
+
+	return out;
+}
+
 InstructionType Instruction::getType()
 {
 	return m_type;
@@ -196,4 +227,25 @@ InstructionType Instruction::getType()
 std::string Instruction::getLabelName()
 { 
 	return labelName; 
+}
+
+std::string Instruction::GetLabel()
+{
+	return label;
+}
+
+/////////// RelInstruction
+
+RelInstruction::RelInstruction(int pos, InstructionType type, Variables& dst, Variables& src, int num, const std::string& labelName, const std::string& currentLabel)
+	: Instruction(pos, type, dst, src, labelName, currentLabel), numValue(num)
+{
+}
+
+RelInstruction::~RelInstruction()
+{
+}
+
+int RelInstruction::GetNumValue()
+{
+	return numValue;
 }

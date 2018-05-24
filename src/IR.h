@@ -43,10 +43,11 @@ class Instruction
 {
 public:
 	Instruction();
-	Instruction(int pos, InstructionType type, Variables& dst, Variables& src, const std::string& labelName);
+	Instruction(int pos, InstructionType type, Variables& dst, Variables& src, const std::string& labelName, const std::string& currentLabel);
 
 	InstructionType getType();
 	std::string getLabelName();
+	std::string GetLabel();
 	void PrintInstruction();
 
 	std::vector<Instruction*> m_succ;
@@ -57,15 +58,30 @@ public:
 	Variables m_in;
 	Variables m_out;
 
+	friend std::ostream& operator<<(std::ostream& out, const Instruction& i);
+
 private:
 	void FillUseDefVariables();
 
 	int m_position;
 	std::string labelName;  // Label name for jump instructions
+	std::string label;
 	InstructionType m_type;
 	
 	Variables m_dst;
 	Variables m_src;
+};
+
+class RelInstruction : public Instruction
+{
+public:
+	RelInstruction(int pos, InstructionType type, Variables& dst, Variables& src, int num, const std::string& labelName, const std::string& currentLabel);
+	~RelInstruction();
+
+	int GetNumValue();
+
+private:
+	int numValue;
 };
 
 

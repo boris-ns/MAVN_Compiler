@@ -77,6 +77,10 @@ void main()
 		ig.BuildInterferenceGraph(instructions);
 		ig.BuildVariableStack();
 		ig.ResourceAllocation();
+
+		syntax.CreateMIPSFile("../examples/simple.s");
+		
+		cout << "MIPS fajl je kreiran." << endl;
 	}
 	catch (runtime_error e)
 	{
