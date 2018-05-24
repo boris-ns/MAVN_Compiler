@@ -67,7 +67,7 @@ private:
 	void CheckMemVariableExistance(Token& t);
 	void CheckRegVariableExistance(Token& t);
 	
-	void AddMemVarToList(Token& t);
+	void AddMemVarToList(Token& t, Token& value);
 	void AddRegVarToList(Token& t);
 	void AddFunctionToList(Token& t);
 	void AddLabelToList(const std::string& labelName, int pos);

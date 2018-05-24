@@ -84,8 +84,8 @@ void PrintInstructions(Instructions& instructions)
 
 /////////// Variable
 
-Variable::Variable(std::string name, int pos, VariableType type)
-	: m_type(type), m_name(name), m_position(pos), m_assignment(no_assign)
+Variable::Variable(std::string name, int pos, VariableType type, int val)
+	: m_type(type), m_name(name), m_position(pos), m_assignment(no_assign), value(val)
 {
 }
 
@@ -107,6 +107,16 @@ Variable::VariableType Variable::GetType()
 void Variable::SetAssignment(Regs r)
 {
 	m_assignment = r;
+}
+
+Regs Variable::GetAssignment()
+{
+	return m_assignment;
+}
+
+int Variable::GetValue()
+{
+	return value;
 }
 
 std::ostream& operator<<(std::ostream& out, const Variable& v)
@@ -188,31 +198,62 @@ void Instruction::PrintInstruction()
 	cout << endl;
 }
 
-ostream& operator<<(ostream& out, const Instruction& i)
+ostream& operator<<(ostream& out, Instruction& i)
 {
+	Variable* v;
+
 	switch (i.m_type)
 	{
 	case I_ADD: // add rid,rid,rid
-		out << "add " << 
+		out << "add $" << i.m_dst.front()->GetAssignment();
+		for (Variables::iterator it = i.m_src.begin(); it != i.m_src.end(); it++)
+			out << ", $" << (*it)->GetAssignment();
+		
+		break;
+
 	case I_SUB: // sub rid,rid,rid
+		out << "sub $" << i.m_dst.front()->GetAssignment();
+		for (Variables::iterator it = i.m_src.begin(); it != i.m_src.end(); it++)
+			out << ", $" << (*it)->GetAssignment();
+
+		break;
+
 	case I_ADDI: // addi rid,rid,num
-		m_def.insert(m_def.end(), m_dst.begin(), m_dst.end());
-		m_use.insert(m_use.end(), m_src.begin(), m_src.end());
+		out << "addi $" << i.m_dst.front()->GetAssignment() << ", ";
+		out << i.m_src.front() << ", " << (reinterpret_cast<RelInstruction*>(&i))->GetNumValue();
 		break;
 
 	case I_LA: // la rid,mid
+		out << "la $" << i.m_dst.front()->GetAssignment() << ", " << i.m_src.front()->getName();
+		break;
+
 	case I_LW: // lw rid,num(rid)
+		out << "lw $" << i.m_dst.front()->GetAssignment();
+		v = i.m_src.front();
+		out << ", " << (reinterpret_cast<RelInstruction*>(&i))->GetNumValue() << "($" << v->GetAssignment() << ")";
+		break;
+
+	case I_SW: // sw rid,num(rid)
+		out << "sw $" << i.m_dst.front()->GetAssignment();
+		v = i.m_src.front();
+		out << ", " << (reinterpret_cast<RelInstruction*>(&i))->GetNumValue() << "($" << v->GetAssignment() << ")";
+		break;
+
 	case I_LI: // li rid,num
-	case I_SW:
-		m_def.insert(m_def.end(), m_dst.begin(), m_dst.end());
+		out << "li $" << i.m_dst.front()->GetAssignment() << ", ";
+		out << (reinterpret_cast<RelInstruction*>(&i))->GetNumValue();
 		break;
 
 	case I_BLTZ: // bltz rid,id
-		m_use.insert(m_use.end(), m_src.begin(), m_src.end());
+		out << "bltz " << i.m_dst.front()->GetAssignment() << ", " << i.labelName;
 		break;
 
 	case I_B:   // b id
+		out << "b " << i.labelName;
+		break;
+
 	case I_NOP: // nop
+		out << "nop";
 		break;
 	}
 

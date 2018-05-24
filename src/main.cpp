@@ -76,7 +76,16 @@ void main()
 		InterferenceGraph ig(syntax.GetRegVariables());
 		ig.BuildInterferenceGraph(instructions);
 		ig.BuildVariableStack();
-		ig.ResourceAllocation();
+
+		if (ig.ResourceAllocation())
+		{
+			cout << endl << "Alokacija resursa uspesno obavljena!" << endl;
+		}
+		else
+		{
+			cout << endl << "Greska prilikom alokacije resursa!" << endl;
+			return;
+		}
 
 		syntax.CreateMIPSFile("../examples/simple.s");
 		

@@ -117,10 +117,10 @@ void SyntaxAnalysis::CheckRegVariableExistance(Token& t)
 
 /* Proverava da li je promenljiva vec deklarisana i da li
    pocinje na slovo 'm'. Smesta promenljivu u listu. */
-void SyntaxAnalysis::AddMemVarToList(Token& t)
+void SyntaxAnalysis::AddMemVarToList(Token& t, Token& value)
 {
 	string variableName = t.getValue();
-	Variable* variable = new Variable(variableName, 0, Variable::MEM_VAR);
+	Variable* variable = new Variable(variableName, 0, Variable::MEM_VAR, stoi(value.getValue()));
 
 	if (!regex_match(variableName, regex("m[0-9]+")))
 	{
@@ -349,13 +349,15 @@ void SyntaxAnalysis::q()
 void SyntaxAnalysis::s()
 {
 	string name;
+	Token t;
 
 	switch (currentToken.getType())
 	{
 	case T_MEM: // _mem mid num
 		eat(T_MEM);
-		AddMemVarToList(currentToken);
+		t = currentToken;
 		eat(T_M_ID);
+		AddMemVarToList(t, currentToken);
 		eat(T_NUM);
 		break;
 
@@ -434,6 +436,7 @@ void SyntaxAnalysis::e()
 		src.push_back(currentToken);
 		eat(T_R_ID);
 		eat(T_COMMA);
+		src.push_back(currentToken);
 		eat(T_R_ID);
 		CreateInstruction(I_SUB, dst, src);
 		break;
@@ -522,13 +525,14 @@ void SyntaxAnalysis::CreateMIPSFile(const std::string& filePath)
 
 	outFile << "\n.data\n";
 
-	// @TODO: DODAJ VALUE ZA PROMENLJIVE
+	// Ispisivanje memorijskih promenljivih
 	for (Variables::iterator it = memoryVariables.begin(); it != memoryVariables.end(); it++)
-		outFile << (*it)->getName() << ": " << ".word " << "\n";
+		outFile << (*it)->getName() << ": " << ".word " << (*it)->GetValue() << "\n";
 
 	outFile << "\n.text\n";
-	int position = 0;
 	
+	// Ispisivanje instrukcija po labelama
+	int position = 0;
 	for (map<string, int>::iterator it = labels.begin(); it != labels.end(); it++)
 	{
 		outFile << it->first << ":\n";

@@ -18,11 +18,13 @@ public:
 	Variable() : m_type(NO_TYPE), m_name(""), m_position(-1), m_assignment(no_assign) {}
 	Variable(std::string name) : m_name(name), m_type(NO_TYPE), m_position(-1), m_assignment(no_assign) {}
 
-	Variable(std::string name, int pos, VariableType type);
+	Variable(std::string name, int pos, VariableType type, int val=0);
 	std::string getName();
 	int GetPos();
 	VariableType GetType();
 	void SetAssignment(Regs r);
+	Regs GetAssignment();
+	int GetValue();
 
 	friend std::ostream& operator<<(std::ostream& out, const Variable& v);
 
@@ -31,6 +33,7 @@ private:
 	std::string m_name;
 	int m_position;
 	Regs m_assignment;
+	int value;
 };
 
 
@@ -58,7 +61,7 @@ public:
 	Variables m_in;
 	Variables m_out;
 
-	friend std::ostream& operator<<(std::ostream& out, const Instruction& i);
+	friend std::ostream& operator<<(std::ostream& out, Instruction& i);
 
 private:
 	void FillUseDefVariables();

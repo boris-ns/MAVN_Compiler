@@ -74,18 +74,18 @@ void InterferenceGraph::ApplyRegToVariable(int varPos, Regs reg)
 	}
 }
 
-void InterferenceGraph::ResourceAllocation()
+bool InterferenceGraph::ResourceAllocation()
 {
 	while (!varStack.empty())
 	{
-		vector<Regs> freeRegs = { t0, t1, t2, t3 };
+		list<Regs> freeRegs = { t0, t1, t2, t3 };
 		Variable* var = varStack.top();
 		varStack.pop();
 
 		int varPos = var->GetPos();
-		Regs currentReg = freeRegs.back();
+		Regs currentReg = freeRegs.front();
 		var->SetAssignment(currentReg);
-		freeRegs.pop_back();
+		freeRegs.pop_front();
 
 		for (int i = 0; i < im[varPos].size(); ++i)
 		{
@@ -93,13 +93,10 @@ void InterferenceGraph::ResourceAllocation()
 			{
 				// moramo dodeliti novi registar
 				if (freeRegs.empty())
-				{
-					cout << endl << "Greska prilikom alokacije resursa!" << endl;
-					return;
-				}
+					return false;
 
-				ApplyRegToVariable(i, freeRegs.back());
-				freeRegs.pop_back();
+				ApplyRegToVariable(i, freeRegs.front());
+				freeRegs.pop_front();
 			}
 			else
 			{
@@ -109,5 +106,5 @@ void InterferenceGraph::ResourceAllocation()
 		}
 	}
 
-	cout << endl << "Alokacija resursa je zavrsena." << endl;
+	return true;
 }

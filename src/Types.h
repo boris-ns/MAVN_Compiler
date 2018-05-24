@@ -79,3 +79,16 @@ enum Regs
 	t2,
 	t3
 };
+
+// @TODO prebaci u types.cpp
+inline std::ostream& operator<<(std::ostream& out, Regs r)
+{
+	switch (r)
+	{
+	case t0: out << "t0"; break;
+	case t1: out << "t1"; break;
+	case t2: out << "t2"; break;
+	case t3: out << "t3"; break;
+	}
+	return out;
+}

@@ -18,7 +18,7 @@ public:
 
 	void BuildInterferenceGraph(Instructions& instructions);
 	void BuildVariableStack();
-	void ResourceAllocation();
+	bool ResourceAllocation();
 
 	InterferenceMatrix im;
 	VariableStack varStack;
