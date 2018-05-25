@@ -1,4 +1,6 @@
 #include "InterferenceGraph.h"
+#include <iomanip>
+#include "Constants.h"
 
 using namespace std;
 
@@ -11,6 +13,7 @@ InterferenceGraph::~InterferenceGraph()
 {
 }
 
+/* Creates interference graph (matrix) from instructions. */
 void InterferenceGraph::BuildInterferenceGraph(Instructions& instructions)
 {
 	ResizeInterferenceMatrix(regVariables.size());
@@ -37,14 +40,15 @@ void InterferenceGraph::BuildInterferenceGraph(Instructions& instructions)
 				}
 				else
 				{
-					im[defPos][outPos] = __NO_INTERFERENCE__;
-					im[outPos][defPos] = __NO_INTERFERENCE__;
+					im[defPos][outPos] = __EMPTY__;
+					im[outPos][defPos] = __EMPTY__;
 				}
 			}
 		}
 	}
 }
 
+/* Resizes matrix to the passed size. */
 void InterferenceGraph::ResizeInterferenceMatrix(size_t size)
 {
 	im.resize(size);
@@ -53,6 +57,7 @@ void InterferenceGraph::ResizeInterferenceMatrix(size_t size)
 		im[i].resize(size);
 }
 
+/* Creates stack from list of register variables. */
 void InterferenceGraph::BuildVariableStack()
 {
 	for (Variables::iterator it = regVariables.begin();
@@ -63,6 +68,7 @@ void InterferenceGraph::BuildVariableStack()
 	}
 }
 
+/* Applies reg to the variable that has varPos for it's position. */
 void InterferenceGraph::ApplyRegToVariable(int varPos, Regs reg)
 {
 	for (Variables::iterator it = regVariables.begin();
@@ -74,11 +80,12 @@ void InterferenceGraph::ApplyRegToVariable(int varPos, Regs reg)
 	}
 }
 
+/* Allocates real registers to variables according to the interference. */
 bool InterferenceGraph::ResourceAllocation()
 {
 	while (!varStack.empty())
 	{
-		list<Regs> freeRegs = { t0, t1, t2, t3 };
+		list<Regs> freeRegs = { t0, t1, t2, t3, t4 };
 		Variable* var = varStack.top();
 		varStack.pop();
 
@@ -107,4 +114,26 @@ bool InterferenceGraph::ResourceAllocation()
 	}
 
 	return true;
+}
+
+/* Prints interference matrix to the console. */
+void InterferenceGraph::PrintInterferenceMatrix()
+{
+	// Print first row (names of registers) as header
+	printf("   ");
+	for (size_t i = 0; i < im.size(); ++i)
+		printf("r%-3d", i);
+
+	printf("\n");
+
+	// Print first column (names of registers) and actual data
+	for (size_t i = 0; i < im.size(); ++i)
+	{
+		printf("r%d ", i);
+
+		for (size_t j = 0; j < im[i].size(); ++j)
+			printf("%-4d", im[i][j]);
+
+		printf("\n");
+	}
 }

@@ -77,7 +77,8 @@ enum Regs
 	t0,
 	t1,
 	t2,
-	t3
+	t3,
+	t4
 };
 
 // @TODO prebaci u types.cpp
@@ -89,6 +90,7 @@ inline std::ostream& operator<<(std::ostream& out, Regs r)
 	case t1: out << "t1"; break;
 	case t2: out << "t2"; break;
 	case t3: out << "t3"; break;
+	case t4: out << "t4"; break;
 	}
 	return out;
 }

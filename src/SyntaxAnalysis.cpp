@@ -6,60 +6,73 @@
 using namespace std;
 
 SyntaxAnalysis::SyntaxAnalysis(LexicalAnalysis& lex, Instructions& instr) 
-	: lexicalAnalysis(lex), errorFound(false), instructions(instr), instructionCounter(0), variableCounter(0)
+	: lexicalAnalysis(lex), errorFound(false), instructions(instr), 
+	  instructionCounter(0), variableCounter(0)
 {
 	tokenIterator = lexicalAnalysis.getTokenList().begin();
 }
 
-/* Proverava da li je mem. promenljiva deklarisana. */
+SyntaxAnalysis::~SyntaxAnalysis()
+{
+}
+
+/* Checks if mem. variable is already defined. */
 Variable* SyntaxAnalysis::ContainsMemoryVar(Variable& var)
 {
-	for (Variables::iterator it = memoryVariables.begin(); it != memoryVariables.end(); it++)
+	for (Variables::iterator it = memoryVariables.begin();
+		it != memoryVariables.end(); 
+		it++)
 	{
-		if ((*it)->getName() == var.getName())
+		if ((*it)->GetName() == var.GetName())
 			return (*it);
 	}
 
 	return NULL;
 }
 
-/* Proverava da li je reg. promenljiva deklarisana. */
-Variable* SyntaxAnalysis::ContainsRegisterVar(Variable& var)
-{
-	for (Variables::iterator it = registerVariables.begin(); it != registerVariables.end(); it++)
-	{
-		if ((*it)->getName() == var.getName())
-			return (*it);
-	}
-
-	return NULL;
-}
-
-/* Proverava da li je mem. promenljiva deklarisana. */
+/* Checks if mem. variable is already defined. */
 Variable* SyntaxAnalysis::ContainsMemoryVar(const std::string& varName)
 {
-	for (Variables::iterator it = memoryVariables.begin(); it != memoryVariables.end(); it++)
+	for (Variables::iterator it = memoryVariables.begin();
+		it != memoryVariables.end(); 
+		it++)
 	{
-		if ((*it)->getName() == varName)
+		if ((*it)->GetName() == varName)
 			return (*it);
 	}
 
 	return NULL;
 }
 
-/* Proverava da li je reg. promenljiva deklarisana. */
+/* Checks if reg. variable is already defined. */
+Variable* SyntaxAnalysis::ContainsRegisterVar(Variable& var)
+{
+	for (Variables::iterator it = registerVariables.begin();
+		it != registerVariables.end(); 
+		it++)
+	{
+		if ((*it)->GetName() == var.GetName())
+			return (*it);
+	}
+
+	return NULL;
+}
+
+/* Checks if reg. variable is already defined. */
 Variable* SyntaxAnalysis::ContainsRegisterVar(const std::string& varName)
 {
-	for (Variables::iterator it = registerVariables.begin(); it != registerVariables.end(); it++)
+	for (Variables::iterator it = registerVariables.begin();
+		it != registerVariables.end();
+		it++)
 	{
-		if ((*it)->getName() == varName)
+		if ((*it)->GetName() == varName)
 			return (*it);
 	}
 
 	return NULL;
 }
 
-/* Proverava da li je labela prethodno definisana. */
+/* Checks if label is already defined. */
 bool SyntaxAnalysis::ContainsLabel(const std::string& id)
 {
 	for (map<string, int>::iterator it = labels.begin();
@@ -73,7 +86,7 @@ bool SyntaxAnalysis::ContainsLabel(const std::string& id)
 	return false;
 }
 
-/* Proverava da li je funkcija prethodno definisana. */
+/* Checks if function is already defined. */
 bool SyntaxAnalysis::ContainsFunction(const std::string& id)
 {
 	for (list<string>::iterator it = functions.begin();
@@ -87,94 +100,75 @@ bool SyntaxAnalysis::ContainsFunction(const std::string& id)
 	return false;
 }
 
-/* Proverava da li se promenljiva koja se moze napraviti od
-   tokena nalazi u listi memorijskih promenljivih */
-void SyntaxAnalysis::CheckMemVariableExistance(Token& t)
-{
-	string variableName = t.getValue();
-	Variable variable(variableName);
-
-	if (ContainsMemoryVar(variable) == NULL)
-	{
-		cout << "Memorijska promenljiva " << variableName << " nije deklarisana." << endl;
-		errorFound = true;
-	}
-}
-
-/* Proverava da li se promenljiva koja se moze napraviti od
-   tokena nalazi u listi registarskih promenljivih */
-void SyntaxAnalysis::CheckRegVariableExistance(Token& t)
-{
-	string variableName = t.getValue();
-	Variable variable(variableName);
-
-	if (ContainsRegisterVar(variable) == NULL)
-	{
-		cout << "Registarska promenljiva " << variableName << " nije deklarisana." << endl;
-		errorFound = true;
-	}
-}
-
-/* Proverava da li je promenljiva vec deklarisana i da li
-   pocinje na slovo 'm'. Smesta promenljivu u listu. */
+/* Creates mem. var. and adds it to the list if t starts
+   with 'm' and if variable isn't already defined. */
 void SyntaxAnalysis::AddMemVarToList(Token& t, Token& value)
 {
 	string variableName = t.getValue();
-	Variable* variable = new Variable(variableName, 0, Variable::MEM_VAR, stoi(value.getValue()));
+	Variable* variable = new Variable(variableName, 0, 
+				Variable::MEM_VAR, stoi(value.getValue()));
 
 	if (!regex_match(variableName, regex("m[0-9]+")))
 	{
 		errorFound = true;
-		cout << "Memorijska promenljiva: " << variableName << " nije dobro definisana." << endl;
+		cout << "Memorijska promenljiva: " << variableName 
+			<< " nije dobro definisana." << endl;
 		return;
 	}
 	if (ContainsMemoryVar(*variable) != NULL)
 	{
 		errorFound = true;
-		cout << "Memorijska promenljiva: " << variableName << " je vec deklarisana." << endl;
+		cout << "Memorijska promenljiva: " << variableName 
+			<< " je vec deklarisana." << endl;
 		return;
 	}
 
 	memoryVariables.push_back(variable);
 }
 
-/* Proverava da li je promenljiva vec deklarisana i da li
-pocinje na slovo 'r'. Smesta promenljivu u listu. */
+/* Creates reg. var. and adds it to the list if t starts
+with 'r' and if variable isn't already defined. */
 void SyntaxAnalysis::AddRegVarToList(Token& t)
 {
 	string variableName = t.getValue();
-	Variable* variable = new Variable(variableName, variableCounter, Variable::REG_VAR);
+	Variable* variable = new Variable(variableName, variableCounter, 
+				Variable::REG_VAR);
 	++variableCounter;
 
 	if (!regex_match(variableName, regex("r[0-9]+")))
 	{
 		errorFound = true;
-		cout << "Registarska promenljiva: " << variableName << " nije dobro definisana." << endl;
+		cout << "Registarska promenljiva: " << variableName 
+			<< " nije dobro definisana." << endl;
 		return;
 	}
 	if (ContainsRegisterVar(*variable) != NULL)
 	{
 		errorFound = true;
-		cout << "Registarska promenljiva: " << variableName << " je vec deklarisana." << endl;
+		cout << "Registarska promenljiva: " << variableName 
+			<< " je vec deklarisana." << endl;
 		return;
 	}
 
 	registerVariables.push_back(variable);
 }
 
+/* Adds function to the list of functions and map of labels. */
 void SyntaxAnalysis::AddFunctionToList(Token& t)
 {
 	string funcName = t.getValue();
 
 	if (!regex_match(funcName, regex("[A-Za-z]+[A-Za-z0-9]*")))
 	{
-		cout << "Funkcija " << funcName << " nema ime u skladu sa pravilima." << endl;
+		cout << "Funkcija " << funcName 
+			<< " nema ime u skladu sa pravilima." << endl;
 		errorFound = true;
 		return;
 	}
 	if (ContainsFunction(funcName))
 	{
-		cout << "Funkcija " << funcName << " je vec definisana." << endl;
+		cout << "Funkcija " << funcName 
+			<< " je vec definisana." << endl;
 		errorFound = true;
 		return;
 	}
@@ -183,6 +177,7 @@ void SyntaxAnalysis::AddFunctionToList(Token& t)
 	AddLabelToList(funcName, instructionCounter);
 }
 
+/* Adds label to the map of labels. */
 void SyntaxAnalysis::AddLabelToList(const std::string& labelName, int pos)
 {
 	if (ContainsLabel(labelName))
@@ -196,8 +191,10 @@ void SyntaxAnalysis::AddLabelToList(const std::string& labelName, int pos)
 	currentLabel = labelName;
 }
 
-// dst - da li mora da bude vektor ili je uvek samo 1 element ?
-void SyntaxAnalysis::CreateInstruction(InstructionType type, vector<Token>& dst, vector<Token>& src)
+/* Creates instruction from destination and source tokens.
+   Also adds instruction to the list. */
+void SyntaxAnalysis::CreateInstruction(InstructionType type, 
+					vector<Token>& dst, vector<Token>& src)
 {
 	Variables* destVars = new Variables;
 	Variables* srcVars = new Variables;
@@ -211,54 +208,63 @@ void SyntaxAnalysis::CreateInstruction(InstructionType type, vector<Token>& dst,
 		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
 		srcVars->push_back(ContainsRegisterVar(src[0].getValue()));
 		srcVars->push_back(ContainsRegisterVar(src[1].getValue()));
-		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, labelName, currentLabel);
+		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, 
+								labelName, currentLabel);
 		break;
 
 	case I_ADDI: // addi rid,rid,num
 		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
 		srcVars->push_back(ContainsRegisterVar(src[0].getValue()));
-		instr = new RelInstruction(instructionCounter, type, *destVars, *srcVars, stoi(src[1].getValue()), labelName, currentLabel);
+		instr = new RelInstruction(instructionCounter, type, *destVars, *srcVars,
+								stoi(src[1].getValue()), labelName, currentLabel);
 		break;
 
 	case I_LA: // la rid,mid
 		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
 		srcVars->push_back(ContainsMemoryVar(src[0].getValue()));
-		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, labelName, currentLabel);
+		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, 
+								labelName, currentLabel);
 		break;
 
 	case I_LW: // lw rid,num(rid)
 	case I_SW:
 		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
 		srcVars->push_back(ContainsRegisterVar(src[1].getValue()));
-		instr = new RelInstruction(instructionCounter, type, *destVars, *srcVars, stoi(src[0].getValue()), labelName, currentLabel);
+		instr = new RelInstruction(instructionCounter, type, *destVars, *srcVars,
+								stoi(src[0].getValue()), labelName, currentLabel);
 		break;
 
 	case I_LI: // li rid,num
 		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
-		instr = new RelInstruction(instructionCounter, type, *destVars, *srcVars, stoi(src[0].getValue()), labelName, currentLabel);
+		instr = new RelInstruction(instructionCounter, type, *destVars, *srcVars, 
+								stoi(src[0].getValue()), labelName, currentLabel);
 		break;
 
 	case I_BLTZ: // bltz rid,id
 		srcVars->push_back(ContainsRegisterVar(src[0].getValue()));
 		labelName = dst[0].getValue();
-		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, labelName, currentLabel);
+		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, 
+								labelName, currentLabel);
 		break;
 
 	case I_B:   // b id
 		labelName = dst[0].getValue();
-		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, labelName, currentLabel);
+		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, 
+								labelName, currentLabel);
 		break;
 
 	case I_NOP: // nop
-		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, labelName, currentLabel);
+		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, 
+								labelName, currentLabel);
 		break;
 	}
 
-	
 	instructions.push_back(instr);
 	++instructionCounter;
 }
 
+/* Fills list of successors for every instruction. 
+   Starts from the beginning and goes to n - 1*/
 void SyntaxAnalysis::FillSuccessors()
 {
 	for (Instructions::iterator it = instructions.begin();
@@ -268,9 +274,9 @@ void SyntaxAnalysis::FillSuccessors()
 		(*it)->m_succ.push_back(*(it + 1));
 
 		// Ako je instrukcija tipa JUMP onda treba dodati jos jednog naslednika
-		if ((*it)->getType() == I_B || (*it)->getType() == I_BLTZ)
+		if ((*it)->GetType() == I_B || (*it)->GetType() == I_BLTZ)
 		{
-			int instrPosition = labels[(*it)->getLabelName()];
+			int instrPosition = labels[(*it)->GetLabelName()];
 			Instruction* instrToJump = instructions.at(instrPosition);
 			(*it)->m_succ.push_back(instrToJump);
 
@@ -280,6 +286,8 @@ void SyntaxAnalysis::FillSuccessors()
 	}
 }
 
+/* Fills list of predcessors for every instruction. 
+   Starts from the end ang goes to second instruction (n-1). */
 void SyntaxAnalysis::FillPredecessor()
 {
 	for (Instructions::reverse_iterator it = instructions.rbegin();
@@ -290,6 +298,7 @@ void SyntaxAnalysis::FillPredecessor()
 	}
 }
 
+/* Method which performs lexical analysis */
 bool SyntaxAnalysis::Do()
 {
 	// get the first token
@@ -304,7 +313,7 @@ bool SyntaxAnalysis::Do()
 		return !errorFound;
 }
 
-
+/* Prints the token that caused the syntax error */
 void SyntaxAnalysis::printSyntaxError(Token& token)
 {
 	cout << "Syntax error! Token: " << token.getValue() << " unexpected" << endl;
@@ -367,7 +376,7 @@ void SyntaxAnalysis::s()
 		eat(T_R_ID);
 		break;
 
-	case T_FUNC: // _func id
+	case T_FUNC: // _func id;
 		eat(T_FUNC);
 		AddFunctionToList(currentToken);
 		eat(T_ID);
@@ -516,6 +525,7 @@ void SyntaxAnalysis::e()
 	}
 }
 
+/* Creates MIPS assembly file, from instructions and variables. */
 void SyntaxAnalysis::CreateMIPSFile(const std::string& filePath)
 {
 	ofstream outFile(filePath);
@@ -526,8 +536,13 @@ void SyntaxAnalysis::CreateMIPSFile(const std::string& filePath)
 	outFile << "\n.data\n";
 
 	// Ispisivanje memorijskih promenljivih
-	for (Variables::iterator it = memoryVariables.begin(); it != memoryVariables.end(); it++)
-		outFile << (*it)->getName() << ": " << ".word " << (*it)->GetValue() << "\n";
+	for (Variables::iterator it = memoryVariables.begin();
+		it != memoryVariables.end();
+		it++)
+	{
+		outFile << (*it)->GetName() << ": " << ".word " 
+			    << (*it)->GetValue() << "\n";
+	}
 
 	outFile << "\n.text\n";
 	
@@ -537,7 +552,9 @@ void SyntaxAnalysis::CreateMIPSFile(const std::string& filePath)
 	{
 		outFile << it->first << ":\n";
 
-		for (Instructions::iterator instr = instructions.begin(); instr != instructions.end(); instr++)
+		for (Instructions::iterator instr = instructions.begin();
+			instr != instructions.end(); 
+			instr++)
 		{
 			// Instrukcija ne odgovara trenutnoj labeli, znaci da smo zavrsili sa tom labelom
 			if ((*instr)->GetLabel() != it->first)

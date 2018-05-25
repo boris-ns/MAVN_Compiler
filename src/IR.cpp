@@ -3,19 +3,21 @@
 
 using namespace std;
 
+/* Checks if variableList contains variable. */
 bool ContainsVariable(Variable& variable, Variables& variableList)
 {
 	for (Variables::const_iterator it = variableList.begin();
 		it != variableList.end();
 		it++)
 	{
-		if (variable.getName() == (*it)->getName())
+		if (variable.GetName() == (*it)->GetName())
 			return true;
 	}
 
 	return false;
 }
 
+/* Does liveness analysis and created in and out variable lists. */
 void LivenessAnalysis(Instructions& instructions)
 {
 	bool again = true;
@@ -31,7 +33,7 @@ void LivenessAnalysis(Instructions& instructions)
 			Variables& out = (*it)->m_out;
 			Variables& in = (*it)->m_in;
 		
-			// Kreiranje newOut
+			// Creating newOut
 			Instructions& successors = (*it)->m_succ;
 			for (Instructions::iterator succIt = successors.begin();
 				succIt != successors.end();
@@ -44,7 +46,7 @@ void LivenessAnalysis(Instructions& instructions)
 			newOut.sort();
 			newOut.unique();
 		
-			// Kreiranje newIn
+			// Creating newIn
 			Variables& use = (*it)->m_use;
 			Variables& def = (*it)->m_def;
 			Variables outMinusDef;
@@ -71,6 +73,7 @@ void LivenessAnalysis(Instructions& instructions)
 	}
 }
 
+/* Prints all instructions. */
 void PrintInstructions(Instructions& instructions)
 {
 	for (Instructions::iterator it = instructions.begin();
@@ -84,12 +87,27 @@ void PrintInstructions(Instructions& instructions)
 
 /////////// Variable
 
-Variable::Variable(std::string name, int pos, VariableType type, int val)
-	: m_type(type), m_name(name), m_position(pos), m_assignment(no_assign), value(val)
+Variable::Variable() 
+	: m_type(NO_TYPE), m_name(""), m_position(-1), m_assignment(no_assign)
 {
 }
 
-std::string Variable::getName() 
+Variable::Variable(std::string name)
+	: m_name(name), m_type(NO_TYPE), m_position(-1), m_assignment(no_assign) 
+{
+}
+
+Variable::Variable(std::string name, int pos, VariableType type, int val)
+	: m_type(type), m_name(name), m_position(pos), 
+	  m_assignment(no_assign), value(val)
+{
+}
+
+Variable::~Variable()
+{
+}
+
+std::string Variable::GetName() 
 { 
 	return m_name;
 }
@@ -104,11 +122,6 @@ Variable::VariableType Variable::GetType()
 	return m_type;
 }
 
-void Variable::SetAssignment(Regs r)
-{
-	m_assignment = r;
-}
-
 Regs Variable::GetAssignment()
 {
 	return m_assignment;
@@ -117,6 +130,11 @@ Regs Variable::GetAssignment()
 int Variable::GetValue()
 {
 	return value;
+}
+
+void Variable::SetAssignment(Regs r)
+{
+	m_assignment = r;
 }
 
 std::ostream& operator<<(std::ostream& out, const Variable& v)
@@ -133,12 +151,18 @@ Instruction::Instruction()
 {
 }
 
-Instruction::Instruction(int pos, InstructionType type, Variables& dst, Variables& src, const std::string& labelName, const std::string& currentLabel)
+Instruction::Instruction(int pos, InstructionType type, Variables& dst, 
+	Variables& src, const std::string& labelName, const std::string& currentLabel)
 	: m_position(pos), m_type(type), m_dst(dst), m_src(src), label(currentLabel)
 {
 	FillUseDefVariables();
 }
 
+Instruction::~Instruction()
+{
+}
+
+/* Fills use and def lists with variables from dst and src. */
 void Instruction::FillUseDefVariables()
 {
 	switch (m_type)
@@ -167,12 +191,14 @@ void Instruction::FillUseDefVariables()
 	}
 }
 
+/* Prints all variables. */
 void PrintVariables(const Variables& vars)
 {
 	for (Variables::const_iterator it = vars.begin(); it != vars.end(); it++)
 		cout << *(*it) << " ";
 }
 
+/* Prints instruction with all variable lists. */
 void Instruction::PrintInstruction()
 {
 	cout << "Instruction " << m_position << endl;
@@ -198,6 +224,7 @@ void Instruction::PrintInstruction()
 	cout << endl;
 }
 
+/* Prints instruction in MIPS format. */
 ostream& operator<<(ostream& out, Instruction& i)
 {
 	Variable* v;
@@ -220,23 +247,27 @@ ostream& operator<<(ostream& out, Instruction& i)
 
 	case I_ADDI: // addi rid,rid,num
 		out << "addi $" << i.m_dst.front()->GetAssignment() << ", ";
-		out << i.m_src.front() << ", " << (reinterpret_cast<RelInstruction*>(&i))->GetNumValue();
+		out << i.m_src.front() << ", " 
+			<< (reinterpret_cast<RelInstruction*>(&i))->GetNumValue();
 		break;
 
 	case I_LA: // la rid,mid
-		out << "la $" << i.m_dst.front()->GetAssignment() << ", " << i.m_src.front()->getName();
+		out << "la $" << i.m_dst.front()->GetAssignment() << ", " 
+			<< i.m_src.front()->GetName();
 		break;
 
 	case I_LW: // lw rid,num(rid)
 		out << "lw $" << i.m_dst.front()->GetAssignment();
 		v = i.m_src.front();
-		out << ", " << (reinterpret_cast<RelInstruction*>(&i))->GetNumValue() << "($" << v->GetAssignment() << ")";
+		out << ", " << (reinterpret_cast<RelInstruction*>(&i))->GetNumValue() 
+			<< "($" << v->GetAssignment() << ")";
 		break;
 
 	case I_SW: // sw rid,num(rid)
 		out << "sw $" << i.m_dst.front()->GetAssignment();
 		v = i.m_src.front();
-		out << ", " << (reinterpret_cast<RelInstruction*>(&i))->GetNumValue() << "($" << v->GetAssignment() << ")";
+		out << ", " << (reinterpret_cast<RelInstruction*>(&i))->GetNumValue() 
+			<< "($" << v->GetAssignment() << ")";
 		break;
 
 	case I_LI: // li rid,num
@@ -260,12 +291,12 @@ ostream& operator<<(ostream& out, Instruction& i)
 	return out;
 }
 
-InstructionType Instruction::getType()
+InstructionType Instruction::GetType()
 {
 	return m_type;
 }
 
-std::string Instruction::getLabelName()
+std::string Instruction::GetLabelName()
 { 
 	return labelName; 
 }
@@ -277,7 +308,9 @@ std::string Instruction::GetLabel()
 
 /////////// RelInstruction
 
-RelInstruction::RelInstruction(int pos, InstructionType type, Variables& dst, Variables& src, int num, const std::string& labelName, const std::string& currentLabel)
+RelInstruction::RelInstruction(int pos, InstructionType type, Variables& dst,
+					Variables& src, int num, const std::string& labelName, 
+					const std::string& currentLabel)
 	: Instruction(pos, type, dst, src, labelName, currentLabel), numValue(num)
 {
 }

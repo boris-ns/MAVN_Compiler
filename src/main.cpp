@@ -18,7 +18,7 @@ void main()
 {
 	try
 	{
-		std::string fileName = ".\\..\\examples\\simple.mavn";
+		std::string fileName = ".\\..\\examples\\multiply.mavn";
 		bool retVal = false;
 
 		// Run lexical analysis
@@ -66,16 +66,18 @@ void main()
 		cout << endl << "Instruction list" << endl << endl;
 		PrintInstructions(instructions);
 
-		// Liveness analysis
+		// Do liveness analysis
 		LivenessAnalysis(instructions);
 
 		cout << endl << "Instruction list after liveness analysis" << endl << endl;
 		PrintInstructions(instructions);
 
-		// Interference graph
+		// Create interference graph, do resource allocation
 		InterferenceGraph ig(syntax.GetRegVariables());
 		ig.BuildInterferenceGraph(instructions);
 		ig.BuildVariableStack();
+
+		ig.PrintInterferenceMatrix();
 
 		if (ig.ResourceAllocation())
 		{
@@ -87,7 +89,7 @@ void main()
 			return;
 		}
 
-		syntax.CreateMIPSFile("../examples/simple.s");
+		syntax.CreateMIPSFile("../examples/multiply.s");
 		
 		cout << "MIPS fajl je kreiran." << endl;
 	}
