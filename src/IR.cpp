@@ -246,8 +246,8 @@ ostream& operator<<(ostream& out, Instruction& i)
 		break;
 
 	case I_ADDI: // addi rid,rid,num
-		out << "addi $" << i.m_dst.front()->GetAssignment() << ", ";
-		out << i.m_src.front() << ", " 
+		out << "addi $" << i.m_dst.front()->GetAssignment() << ", $";
+		out << i.m_src.front()->GetAssignment() << ", " 
 			<< (reinterpret_cast<RelInstruction*>(&i))->GetNumValue();
 		break;
 
@@ -276,7 +276,7 @@ ostream& operator<<(ostream& out, Instruction& i)
 		break;
 
 	case I_BLTZ: // bltz rid,id
-		out << "bltz " << i.m_dst.front()->GetAssignment() << ", " << i.labelName;
+		out << "bltz $" << i.m_src.front()->GetAssignment() << ", " << i.labelName;
 		break;
 
 	case I_B:   // b id

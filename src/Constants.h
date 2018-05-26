@@ -30,7 +30,7 @@
 /**
  * Number of regs in processor.
  */
-#define __REG_NUMBER__					4
+#define __REG_NUMBER__					5
 
 /**
  * Use these to print liveness analysis dump.

@@ -83,34 +83,45 @@ void InterferenceGraph::ApplyRegToVariable(int varPos, Regs reg)
 /* Allocates real registers to variables according to the interference. */
 bool InterferenceGraph::ResourceAllocation()
 {
-	while (!varStack.empty())
+	list<Regs> freeRegs;
+	list<Variable*> colored;
+
+	for (int i = 1; i <= __REG_NUMBER__; i++) 
+		freeRegs.push_back((Regs)i);
+
+	while (!varStack.empty()) 
 	{
-		list<Regs> freeRegs = { t0, t1, t2, t3, t4 };
-		Variable* var = varStack.top();
-		varStack.pop();
+		Variable* temp = varStack.top();
+		bool interference = false;
 
-		int varPos = var->GetPos();
-		Regs currentReg = freeRegs.front();
-		var->SetAssignment(currentReg);
-		freeRegs.pop_front();
-
-		for (int i = 0; i < im[varPos].size(); ++i)
+		for (auto it = colored.begin(); it != colored.end(); it++)
 		{
-			if (im[varPos][i] == __INTERFERENCE__)
-			{
-				// moramo dodeliti novi registar
-				if (freeRegs.empty())
-					return false;
+			if (im[temp->GetPos()][(*it)->GetPos()] == __INTERFERENCE__) 
+				interference = true;
+		}
 
-				ApplyRegToVariable(i, freeRegs.front());
+		if (!interference)
+		{
+			if (freeRegs.empty())
+				return false;
+
+			temp->SetAssignment(freeRegs.front());
+		}
+		else
+		{
+			if (!freeRegs.empty())
+			{
 				freeRegs.pop_front();
+				temp->SetAssignment(freeRegs.front());
 			}
 			else
 			{
-				// mozemo dodeliti isti registar kao sto ima i var
-				ApplyRegToVariable(i, currentReg);
+				return false;
 			}
 		}
+
+		colored.push_back(temp);
+		varStack.pop();
 	}
 
 	return true;

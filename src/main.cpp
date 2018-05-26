@@ -19,6 +19,7 @@ void main()
 	try
 	{
 		std::string fileName = ".\\..\\examples\\multiply.mavn";
+		std::string outputFile = ".\\..\\examples\\multiply.s";
 		bool retVal = false;
 
 		// Run lexical analysis
@@ -89,7 +90,7 @@ void main()
 			return;
 		}
 
-		syntax.CreateMIPSFile("../examples/multiply.s");
+		syntax.CreateMIPSFile(outputFile);
 		
 		cout << "MIPS fajl je kreiran." << endl;
 	}

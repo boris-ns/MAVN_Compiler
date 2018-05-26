@@ -569,16 +569,14 @@ void SyntaxAnalysis::CreateMIPSFile(const std::string& filePath)
 	{
 		outFile << it->first << ":\n";
 
-		while (true)
+		while (instr != instructions.end())
 		{
-			if (instr == instructions.end())
-				break;
-
 			// Instrukcija ne odgovara trenutnoj labeli, znaci da smo zavrsili sa tom labelom
 			if ((*instr)->GetLabel() != it->first)
 				break;
 
 			outFile << "\t" << *(*instr) << "\n";
+			cout << "\t" << *(*instr) << "\n";
 			instr++;
 		}
 	}
