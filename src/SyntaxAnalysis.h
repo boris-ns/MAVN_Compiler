@@ -4,6 +4,8 @@
 #include "Token.h"
 #include "IR.h"
 
+typedef std::vector<std::pair<std::string, int>> Labels;
+
 class SyntaxAnalysis
 {
 public:
@@ -38,8 +40,6 @@ public:
 	/* Getters */
 	Variables& GetRegVariables();
 	Variables& GetMemoryVariables();
-	std::list<std::string>& GetFunctions();
-	std::map<std::string, int>& GetLabels();
 
 private:
 
@@ -56,9 +56,9 @@ private:
 	Variables memoryVariables;         // List of memory variables
 	Variables registerVariables;       // List of register variables
 
-	std::map<std::string, int> labels; // Holds name of labels and functions,
-                                       // and position of it's first instruction
-	std::list<std::string> functions;  // Hold all function names
+	Labels labels;						// Holds name of labels and functions,
+										// and position of it's first instruction
+	std::list<std::string> functions;	// Hold all function names
 
 	/* Methods that check if mem/reg variables are already defined. */
 	Variable* ContainsMemoryVar(Variable& var);
@@ -83,6 +83,9 @@ private:
 	/* Creates instruction from destination and source tokens.
 	   Also adds instruction to the list. */
 	void CreateInstruction(InstructionType type, vector<Token>& dst, vector<Token>& src);
+
+	/* Gets position of instruction from list of labels. */
+	int GetInstrPositionFromLabel(std::string label);
 
 	void q(); /* Nonterminal Q */
 	void s(); /* Nonterminal S */

@@ -75,7 +75,7 @@ Variable* SyntaxAnalysis::ContainsRegisterVar(const std::string& varName)
 /* Checks if label is already defined. */
 bool SyntaxAnalysis::ContainsLabel(const std::string& id)
 {
-	for (map<string, int>::iterator it = labels.begin();
+	for (Labels::iterator it = labels.begin();
 		it != labels.end();
 		it++)
 	{
@@ -187,7 +187,7 @@ void SyntaxAnalysis::AddLabelToList(const std::string& labelName, int pos)
 		return;
 	}
 
-	labels[labelName] = pos;
+	labels.push_back(pair<string, int>(labelName, pos));
 	currentLabel = labelName;
 }
 
@@ -263,6 +263,20 @@ void SyntaxAnalysis::CreateInstruction(InstructionType type,
 	++instructionCounter;
 }
 
+/* Gets position of instruction from list of labels. */
+int SyntaxAnalysis::GetInstrPositionFromLabel(std::string label)
+{
+	for (Labels::iterator it = labels.begin();
+		it != labels.end();
+		it++)
+	{
+		if (it->first == label)
+			return it->second;
+	}
+
+	return -1;
+}
+
 /* Fills list of successors for every instruction. 
    Starts from the beginning and goes to n - 1*/
 void SyntaxAnalysis::FillSuccessors()
@@ -276,7 +290,7 @@ void SyntaxAnalysis::FillSuccessors()
 		// Ako je instrukcija tipa JUMP onda treba dodati jos jednog naslednika
 		if ((*it)->GetType() == I_B || (*it)->GetType() == I_BLTZ)
 		{
-			int instrPosition = labels[(*it)->GetLabelName()];
+			int instrPosition = GetInstrPositionFromLabel((*it)->GetLabelName());
 			Instruction* instrToJump = instructions.at(instrPosition);
 			(*it)->m_succ.push_back(instrToJump);
 
@@ -547,20 +561,25 @@ void SyntaxAnalysis::CreateMIPSFile(const std::string& filePath)
 	outFile << "\n.text\n";
 	
 	// Ispisivanje instrukcija po labelama
-	int position = 0;
-	for (map<string, int>::iterator it = labels.begin(); it != labels.end(); it++)
+	Instructions::iterator instr = instructions.begin();
+	
+	for (Labels::iterator it = labels.begin();
+		it != labels.end();
+		it++)
 	{
 		outFile << it->first << ":\n";
 
-		for (Instructions::iterator instr = instructions.begin();
-			instr != instructions.end(); 
-			instr++)
+		while (true)
 		{
+			if (instr == instructions.end())
+				break;
+
 			// Instrukcija ne odgovara trenutnoj labeli, znaci da smo zavrsili sa tom labelom
 			if ((*instr)->GetLabel() != it->first)
 				break;
 
 			outFile << "\t" << *(*instr) << "\n";
+			instr++;
 		}
 	}
 
@@ -575,13 +594,4 @@ Variables& SyntaxAnalysis::GetRegVariables()
 Variables& SyntaxAnalysis::GetMemoryVariables()
 {
 	return memoryVariables;
-}
-std::list<std::string>& SyntaxAnalysis::GetFunctions()
-{
-	return functions;
-}
-
-std::map<std::string, int>& SyntaxAnalysis::GetLabels()
-{
-	return labels;
 }

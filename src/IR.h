@@ -49,7 +49,7 @@ class Instruction
 public:
 	Instruction();
 	Instruction(int pos, InstructionType type, Variables& dst, Variables& src,
-				const std::string& labelName, const std::string& currentLabel);
+				const std::string& ln, const std::string& currentLabel);
 	~Instruction();
 
 	/* Getters */

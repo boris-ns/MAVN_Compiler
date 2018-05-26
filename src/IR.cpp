@@ -152,8 +152,8 @@ Instruction::Instruction()
 }
 
 Instruction::Instruction(int pos, InstructionType type, Variables& dst, 
-	Variables& src, const std::string& labelName, const std::string& currentLabel)
-	: m_position(pos), m_type(type), m_dst(dst), m_src(src), label(currentLabel)
+	Variables& src, const std::string& ln, const std::string& currentLabel)
+	: m_position(pos), m_type(type), m_dst(dst), m_src(src), labelName(ln), label(currentLabel)
 {
 	FillUseDefVariables();
 }
