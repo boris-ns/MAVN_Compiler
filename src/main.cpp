@@ -14,12 +14,24 @@
 
 using namespace std;
 
-void main()
+void main(int argc, char** argv)
 {
+	string fileName = ".\\..\\examples\\multiply.mavn";
+	string outputFile = ".\\..\\examples\\multiply.s";
+	
+	if (argc == 3)
+	{
+		fileName = argv[1];
+		outputFile = argv[2];
+	}
+	/*else // Uncomment this if you want to have program that only works with cmd args.
+	{
+		cout << "Wrong number of cmd args." << endl;
+		return;
+	}*/
+
 	try
 	{
-		std::string fileName = ".\\..\\examples\\multiply.mavn";
-		std::string outputFile = ".\\..\\examples\\multiply.s";
 		bool retVal = false;
 
 		// Run lexical analysis
