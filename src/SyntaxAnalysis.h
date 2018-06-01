@@ -4,8 +4,11 @@
 #include "Token.h"
 #include "IR.h"
 
+/* Vector of pairs - name of label and position of first instr. */
 typedef std::vector<std::pair<std::string, int>> Labels;
 
+/* Class for syntax analysis, fill labels, functions, 
+   register and memory variables, creating instruction. */
 class SyntaxAnalysis
 {
 public:

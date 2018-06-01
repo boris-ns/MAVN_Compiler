@@ -27,8 +27,10 @@ enum TokenType
 	T_FUNC,			// _func
 	T_ADD,			// add
 	T_ADDI,			// addi
+	T_ADDU,			// addu
 	T_SUB,			// sub
 	T_LA,			// la
+	T_LH,			// lh
 	T_LI,			// li
 	T_LW,			// lw
 	T_SW,			// sw
@@ -58,8 +60,10 @@ enum InstructionType
 	I_NO_TYPE = 0,
 	I_ADD,
 	I_ADDI,
+	I_ADDU,
 	I_SUB,
 	I_LA,
+	I_LH,
 	I_LI,
 	I_LW,
 	I_SW,
@@ -83,18 +87,5 @@ enum Regs
 	t6
 };
 
-// @TODO prebaci u types.cpp
-inline std::ostream& operator<<(std::ostream& out, Regs r)
-{
-	switch (r)
-	{
-	case t0: out << "t0"; break;
-	case t1: out << "t1"; break;
-	case t2: out << "t2"; break;
-	case t3: out << "t3"; break;
-	case t4: out << "t4"; break;
-	case t5: out << "t5"; break;
-	case t6: out << "t6"; break;
-	}
-	return out;
-}
+/* Prints register to the output. */
+std::ostream& operator<<(std::ostream& out, Regs r);

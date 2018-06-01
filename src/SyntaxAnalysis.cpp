@@ -127,7 +127,7 @@ void SyntaxAnalysis::AddMemVarToList(Token& t, Token& value)
 }
 
 /* Creates reg. var. and adds it to the list if t starts
-with 'r' and if variable isn't already defined. */
+   with 'r' and if variable isn't already defined. */
 void SyntaxAnalysis::AddRegVarToList(Token& t)
 {
 	string variableName = t.getValue();
@@ -203,8 +203,9 @@ void SyntaxAnalysis::CreateInstruction(InstructionType type,
 
 	switch (type)
 	{
-	case I_ADD: // add rid,rid,rid
-	case I_SUB: // sub rid,rid,rid
+	case I_ADD:  // add rid,rid,rid
+	case I_ADDU: // addu rid,rid,rid
+	case I_SUB:  // sub rid,rid,rid
 		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
 		srcVars->push_back(ContainsRegisterVar(src[0].getValue()));
 		srcVars->push_back(ContainsRegisterVar(src[1].getValue()));
@@ -227,7 +228,8 @@ void SyntaxAnalysis::CreateInstruction(InstructionType type,
 		break;
 
 	case I_LW: // lw rid,num(rid)
-	case I_SW:
+	case I_LH: // lh rid,num(rid)
+	case I_SW: // sw rid,num(rid)
 		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
 		srcVars->push_back(ContainsRegisterVar(src[1].getValue()));
 		instr = new RelInstruction(instructionCounter, type, *destVars, *srcVars,
@@ -278,23 +280,26 @@ int SyntaxAnalysis::GetInstrPositionFromLabel(std::string label)
 }
 
 /* Fills list of successors for every instruction. 
-   Starts from the beginning and goes to n - 1*/
+   Starts from the beginning and goes to n - 1.
+   Also adds predecessors for BRANCH instructions.*/
 void SyntaxAnalysis::FillSuccessors()
 {
 	for (Instructions::iterator it = instructions.begin();
 		it != instructions.end() - 1;
 		it++)
 	{
-		(*it)->m_succ.push_back(*(it + 1));
+		// Instruction B has only 1 succ
+		if ((*it)->GetType() != I_B)
+			(*it)->m_succ.push_back(*(it + 1));
 
-		// Ako je instrukcija tipa JUMP onda treba dodati jos jednog naslednika
+		// If instr. is BRANCH type then we need to add one more successor
 		if ((*it)->GetType() == I_B || (*it)->GetType() == I_BLTZ)
 		{
 			int instrPosition = GetInstrPositionFromLabel((*it)->GetLabelName());
 			Instruction* instrToJump = instructions.at(instrPosition);
 			(*it)->m_succ.push_back(instrToJump);
 
-			// Kad smo vec dosli do instr. na koju se skace, dodamo i prethodnika (trenutnu instr.)
+			// Add predecessor for instr. we jump to
 			instrToJump->m_pred.push_back(*it);
 		}
 	}
@@ -333,7 +338,12 @@ void SyntaxAnalysis::printSyntaxError(Token& token)
 	cout << "Syntax error! Token: " << token.getValue() << " unexpected" << endl;
 }
 
-
+/**
+* Eats the current token if its type is "t"
+* otherwise reports syntax error
+*
+* param[in] - t - the expected token type
+*/
 void SyntaxAnalysis::eat(TokenType t)
 {
 	if (errorFound)
@@ -352,7 +362,7 @@ void SyntaxAnalysis::eat(TokenType t)
 	}
 }
 
-
+/* Returns the next token from the token list */
 Token SyntaxAnalysis::getNextToken()
 {
 	if (tokenIterator == lexicalAnalysis.getTokenList().end())
@@ -360,7 +370,7 @@ Token SyntaxAnalysis::getNextToken()
 	return *tokenIterator++;
 }
 
-
+/* Implementation of nonterminal Q */
 void SyntaxAnalysis::q()
 {
 	s();
@@ -368,7 +378,7 @@ void SyntaxAnalysis::q()
 	l();
 }
 
-
+/* Implementation of nonterminal S */
 void SyntaxAnalysis::s()
 {
 	string name;
@@ -409,7 +419,7 @@ void SyntaxAnalysis::s()
 	}
 }
 
-
+/* Implementation of nonterminal L */
 void SyntaxAnalysis::l()
 {
 	if (currentToken.getType() == T_END_OF_FILE)
@@ -418,7 +428,9 @@ void SyntaxAnalysis::l()
 		q();
 }
 
-
+/* Implementation of nonterminal E.
+   From here we fill vectors of source and destination 
+   tokens and call create instruction method. */
 void SyntaxAnalysis::e()
 {
 	vector<Token> src, dst;
@@ -449,6 +461,19 @@ void SyntaxAnalysis::e()
 		src.push_back(currentToken);
 		eat(T_NUM);
 		CreateInstruction(I_ADDI, dst, src);
+		break;
+
+	case T_ADDU: // addu rid,rid,rid
+		eat(T_ADDU);
+		dst.push_back(currentToken);
+		eat(T_R_ID);
+		eat(T_COMMA);
+		src.push_back(currentToken);
+		eat(T_R_ID);
+		eat(T_COMMA);
+		src.push_back(currentToken);
+		eat(T_R_ID);
+		CreateInstruction(I_ADDU, dst, src);
 		break;
 
 	case T_SUB: // sub rid,rid,rid
@@ -486,6 +511,20 @@ void SyntaxAnalysis::e()
 		eat(T_R_ID);
 		eat(T_R_PARENT);
 		CreateInstruction(I_LW, dst, src);
+		break;
+
+	case T_LH: // lh rid,num(rid)
+		eat(T_LH);
+		dst.push_back(currentToken);
+		eat(T_R_ID);
+		eat(T_COMMA);
+		src.push_back(currentToken);
+		eat(T_NUM);
+		eat(T_L_PARENT);
+		src.push_back(currentToken);
+		eat(T_R_ID);
+		eat(T_R_PARENT);
+		CreateInstruction(I_LH, dst, src);
 		break;
 
 	case T_LI: // li rid,num
@@ -539,17 +578,18 @@ void SyntaxAnalysis::e()
 	}
 }
 
-/* Creates MIPS assembly file, from instructions and variables. */
+/* Creates MIPS assembly file from instructions and variables. */
 void SyntaxAnalysis::CreateMIPSFile(const std::string& filePath)
 {
 	ofstream outFile(filePath);
 
+	// Fill .globl section with functions
 	for (list<string>::iterator it = functions.begin(); it != functions.end(); it++)
 		outFile << ".globl " << *it << "\n";
 
+	// Fill .data section with memory variables and it's values
 	outFile << "\n.data\n";
 
-	// Ispisivanje memorijskih promenljivih
 	for (Variables::iterator it = memoryVariables.begin();
 		it != memoryVariables.end();
 		it++)
@@ -558,20 +598,23 @@ void SyntaxAnalysis::CreateMIPSFile(const std::string& filePath)
 			    << (*it)->GetValue() << "\n";
 	}
 
+	// Fill .text section with instructions and labels
 	outFile << "\n.text\n";
 	
-	// Ispisivanje instrukcija po labelama
 	Instructions::iterator instr = instructions.begin();
 	
+	// Print instructons by labels
+	// (Every instructions contains in which label it should be)
 	for (Labels::iterator it = labels.begin();
 		it != labels.end();
 		it++)
 	{
 		outFile << it->first << ":\n";
 
+		// Print instructions for label *it
 		while (instr != instructions.end())
 		{
-			// Instrukcija ne odgovara trenutnoj labeli, znaci da smo zavrsili sa tom labelom
+			// Exit condition, instruction is in another label
 			if ((*instr)->GetLabel() != it->first)
 				break;
 
@@ -584,11 +627,13 @@ void SyntaxAnalysis::CreateMIPSFile(const std::string& filePath)
 	outFile.close();
 }
 
+/* Getter for register variables. */
 Variables& SyntaxAnalysis::GetRegVariables()
 {
 	return registerVariables;
 }
 
+/* Getter for memory variables. */
 Variables& SyntaxAnalysis::GetMemoryVariables()
 {
 	return memoryVariables;

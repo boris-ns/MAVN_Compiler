@@ -167,17 +167,19 @@ void Instruction::FillUseDefVariables()
 {
 	switch (m_type)
 	{
-	case I_ADD: // add rid,rid,rid
-	case I_SUB: // sub rid,rid,rid
+	case I_ADD:  // add rid,rid,rid
+	case I_SUB:  // sub rid,rid,rid
 	case I_ADDI: // addi rid,rid,num
+	case I_ADDU: // addu rid,rid,rid
 		m_def.insert(m_def.end(), m_dst.begin(), m_dst.end());
 		m_use.insert(m_use.end(), m_src.begin(), m_src.end());
 		break;
 
 	case I_LA: // la rid,mid
-	case I_LW: // lw rid,num(rid)
 	case I_LI: // li rid,num
-	case I_SW:
+	case I_LW: // lw rid,num(rid)
+	case I_LH: // lh rid,num(rid)
+	case I_SW: // sw rid,num(rid)
 		m_def.insert(m_def.end(), m_dst.begin(), m_dst.end());
 		break;
 
@@ -251,6 +253,13 @@ ostream& operator<<(ostream& out, Instruction& i)
 			<< (reinterpret_cast<RelInstruction*>(&i))->GetNumValue();
 		break;
 
+	case I_ADDU: // addu rid,rid,rid
+		out << "addu $" << i.m_dst.front()->GetAssignment();
+		for (Variables::iterator it = i.m_src.begin(); it != i.m_src.end(); it++)
+			out << ", $" << (*it)->GetAssignment();
+
+		break;
+
 	case I_LA: // la rid,mid
 		out << "la $" << i.m_dst.front()->GetAssignment() << ", " 
 			<< i.m_src.front()->GetName();
@@ -260,6 +269,13 @@ ostream& operator<<(ostream& out, Instruction& i)
 		out << "lw $" << i.m_dst.front()->GetAssignment();
 		v = i.m_src.front();
 		out << ", " << (reinterpret_cast<RelInstruction*>(&i))->GetNumValue() 
+			<< "($" << v->GetAssignment() << ")";
+		break;
+
+	case I_LH: // lh rid,num(rid)
+		out << "lh $" << i.m_dst.front()->GetAssignment();
+		v = i.m_src.front();
+		out << ", " << (reinterpret_cast<RelInstruction*>(&i))->GetNumValue()
 			<< "($" << v->GetAssignment() << ")";
 		break;
 

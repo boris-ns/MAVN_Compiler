@@ -97,8 +97,10 @@ string Token::tokenTypeToString(TokenType t)
 		case T_FUNC:			return "[T_FUNC]";
 		case T_ADD:				return "[T_ADD]";
 		case T_ADDI:			return "[T_ADDI]";
+		case T_ADDU:			return "[T_ADDU]";
 		case T_SUB:				return "[T_SUB]";
 		case T_LA:				return "[T_LA]";
+		case T_LH:				return "[T_LH]";
 		case T_LI:				return "[T_LI]";
 		case T_LW:				return "[T_LW]";
 		case T_SW:				return "[T_SW]";

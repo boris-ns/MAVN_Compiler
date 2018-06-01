@@ -16,19 +16,21 @@ using namespace std;
 
 void main(int argc, char** argv)
 {
-	string fileName = ".\\..\\examples\\multiply.mavn";
-	string outputFile = ".\\..\\examples\\multiply.s";
+	string inputFile, outputFile;
 	
+	// Command line arguments handling
 	if (argc == 3)
 	{
-		fileName = argv[1];
+		inputFile = argv[1];
 		outputFile = argv[2];
 	}
-	/*else // Uncomment this if you want to have program that only works with cmd args.
+	else 
 	{
-		cout << "Wrong number of cmd args." << endl;
+		cout << "Wrong number of command line arguments." << endl;
+		cout << "Run the program like this: LexicalAnalysis.exe "
+			 << "<input_mavn_file> <output_mips_file>" << endl;
 		return;
-	}*/
+	}
 
 	try
 	{
@@ -37,7 +39,7 @@ void main(int argc, char** argv)
 		// Run lexical analysis
 		LexicalAnalysis lex;
 		
-		if (!lex.readInputFile(fileName))
+		if (!lex.readInputFile(inputFile))
 			throw runtime_error("\nException! Failed to open input file!\n");
 		
 		lex.initialize();
@@ -90,21 +92,23 @@ void main(int argc, char** argv)
 		ig.BuildInterferenceGraph(instructions);
 		ig.BuildVariableStack();
 
+		// Print interference matrix
+		cout << endl << "Interference matrix:" << endl;
 		ig.PrintInterferenceMatrix();
 
 		if (ig.ResourceAllocation())
 		{
-			cout << endl << "Alokacija resursa uspesno obavljena!" << endl;
+			cout << endl << "Resource allocation successful!" << endl;
 		}
 		else
 		{
-			cout << endl << "Greska prilikom alokacije resursa!" << endl;
+			cout << endl << "Resource allocation failed!" << endl;
 			return;
 		}
 
 		syntax.CreateMIPSFile(outputFile);
 		
-		cout << "MIPS fajl je kreiran." << endl;
+		cout << endl << "Output MIPS file is created." << endl;
 	}
 	catch (runtime_error e)
 	{
