@@ -1,0 +1,4 @@
+../tests/mavn_files/simple.mavn ../tests/compiled_files/simple.s
+../tests/mavn_files/multiply.mavn ../tests/compiled_files/multiply.s
+../tests/mavn_files/multiple_functions.mavn ../tests/compiled_files/multiple_functions.s
+../tests/mavn_files/twice_defined_function.mavn ../tests/compiled_files/twice_defined_function.s

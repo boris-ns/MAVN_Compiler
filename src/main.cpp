@@ -32,6 +32,9 @@ void main(int argc, char** argv)
 		return;
 	}
 
+	/*inputFile = "../examples/label_name_same_as_func.mavn";
+	outputFile = "../examples/not_defined_label.s";*/
+
 	try
 	{
 		bool retVal = false;
@@ -65,13 +68,9 @@ void main(int argc, char** argv)
 		retVal = syntax.Do();
 
 		if (retVal)
-		{
 			cout << "Syntax analysis finished successfully!" << endl;
-		}
 		else
-		{
 			throw runtime_error("\nException! Syntax analysis failed!\n");
-		}
 
 		// Finishing instruction creation
 		syntax.FillSuccessors();
@@ -97,18 +96,13 @@ void main(int argc, char** argv)
 		ig.PrintInterferenceMatrix();
 
 		if (ig.ResourceAllocation())
-		{
 			cout << endl << "Resource allocation successful!" << endl;
-		}
 		else
-		{
-			cout << endl << "Resource allocation failed!" << endl;
-			return;
-		}
+			throw runtime_error("\nException! Resource allocation failed!!\n");
 
 		syntax.CreateMIPSFile(outputFile);
 		
-		cout << endl << "Output MIPS file is created." << endl;
+		cout << endl << "Output MIPS file is created at location " << outputFile << endl;
 	}
 	catch (runtime_error e)
 	{

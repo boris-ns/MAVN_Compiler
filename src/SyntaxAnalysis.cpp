@@ -109,19 +109,12 @@ void SyntaxAnalysis::AddMemVarToList(Token& t, Token& value)
 				Variable::MEM_VAR, stoi(value.getValue()));
 
 	if (!regex_match(variableName, regex("m[0-9]+")))
-	{
-		errorFound = true;
-		cout << "Memorijska promenljiva: " << variableName 
-			<< " nije dobro definisana." << endl;
-		return;
-	}
+		throw runtime_error("Name of memory variable " +
+			variableName + " isn't correct.");
+	
 	if (ContainsMemoryVar(*variable) != NULL)
-	{
-		errorFound = true;
-		cout << "Memorijska promenljiva: " << variableName 
-			<< " je vec deklarisana." << endl;
-		return;
-	}
+		throw runtime_error("Memory variable " +
+			variableName + " is already defined.");
 
 	memoryVariables.push_back(variable);
 }
@@ -136,19 +129,12 @@ void SyntaxAnalysis::AddRegVarToList(Token& t)
 	++variableCounter;
 
 	if (!regex_match(variableName, regex("r[0-9]+")))
-	{
-		errorFound = true;
-		cout << "Registarska promenljiva: " << variableName 
-			<< " nije dobro definisana." << endl;
-		return;
-	}
+		throw runtime_error("Name of register variable " + 
+			variableName + " isn't correct.");
+	
 	if (ContainsRegisterVar(*variable) != NULL)
-	{
-		errorFound = true;
-		cout << "Registarska promenljiva: " << variableName 
-			<< " je vec deklarisana." << endl;
-		return;
-	}
+		throw runtime_error("Register variable " +
+			variableName + " is already defined.");
 
 	registerVariables.push_back(variable);
 }
@@ -159,19 +145,10 @@ void SyntaxAnalysis::AddFunctionToList(Token& t)
 	string funcName = t.getValue();
 
 	if (!regex_match(funcName, regex("[A-Za-z]+[A-Za-z0-9]*")))
-	{
-		cout << "Funkcija " << funcName 
-			<< " nema ime u skladu sa pravilima." << endl;
-		errorFound = true;
-		return;
-	}
+		throw runtime_error("Name of function " + funcName + " isn't correct.");
+	
 	if (ContainsFunction(funcName))
-	{
-		cout << "Funkcija " << funcName 
-			<< " je vec definisana." << endl;
-		errorFound = true;
-		return;
-	}
+		throw runtime_error("Function " + funcName + " is already defined.");
 
 	functions.push_back(funcName);
 	AddLabelToList(funcName, instructionCounter);
@@ -180,12 +157,12 @@ void SyntaxAnalysis::AddFunctionToList(Token& t)
 /* Adds label to the map of labels. */
 void SyntaxAnalysis::AddLabelToList(const std::string& labelName, int pos)
 {
+	// Does label have any naming rules ? (this is the same rule as functions)
+	if (!regex_match(labelName, regex("[A-Za-z]+[A-Za-z0-9]*")))
+		throw runtime_error("Name of label " + labelName + " isn't correct.");
+
 	if (ContainsLabel(labelName))
-	{
-		cout << "Labela " << labelName << " je vec definisana." << endl;
-		errorFound = true;
-		return;
-	}
+		throw runtime_error("Label " + labelName + " is already defined.");
 
 	labels.push_back(pair<string, int>(labelName, pos));
 	currentLabel = labelName;
@@ -198,6 +175,7 @@ void SyntaxAnalysis::CreateInstruction(InstructionType type,
 {
 	Variables* destVars = new Variables;
 	Variables* srcVars = new Variables;
+	Variable* var;
 	string labelName = "";
 	Instruction* instr;
 
@@ -206,23 +184,49 @@ void SyntaxAnalysis::CreateInstruction(InstructionType type,
 	case I_ADD:  // add rid,rid,rid
 	case I_ADDU: // addu rid,rid,rid
 	case I_SUB:  // sub rid,rid,rid
-		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
-		srcVars->push_back(ContainsRegisterVar(src[0].getValue()));
-		srcVars->push_back(ContainsRegisterVar(src[1].getValue()));
+		if ((var = ContainsRegisterVar(dst[0].getValue())) == NULL)
+			throw runtime_error("Register variable " + dst[0].getValue() + " is not defined.");
+
+		destVars->push_back(var);
+		
+		if ((var = ContainsRegisterVar(src[0].getValue())) == NULL)
+			throw runtime_error("Register variable " + src[0].getValue() + " is not defined.");
+
+		srcVars->push_back(var);
+		
+		if ((var = ContainsRegisterVar(src[1].getValue())) == NULL)
+			throw runtime_error("Register variable " + src[1].getValue() + " is not defined.");
+
+		srcVars->push_back(var);
+		
 		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, 
 								labelName, currentLabel);
 		break;
 
 	case I_ADDI: // addi rid,rid,num
-		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
+		if ((var = ContainsRegisterVar(dst[0].getValue())) == NULL)
+			throw runtime_error("Register variable " + dst[0].getValue() + " is not defined.");
+
+		destVars->push_back(var);
+
+		if ((var = ContainsRegisterVar(src[0].getValue())) == NULL)
+			throw runtime_error("Register variable " + src[0].getValue() + " is not defined.");
+
 		srcVars->push_back(ContainsRegisterVar(src[0].getValue()));
 		instr = new RelInstruction(instructionCounter, type, *destVars, *srcVars,
 								stoi(src[1].getValue()), labelName, currentLabel);
 		break;
 
 	case I_LA: // la rid,mid
-		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
-		srcVars->push_back(ContainsMemoryVar(src[0].getValue()));
+		if ((var = ContainsRegisterVar(dst[0].getValue())) == NULL)
+			throw runtime_error("Register variable " + dst[0].getValue() + " is not defined.");
+
+		destVars->push_back(var);
+
+		if ((var = ContainsMemoryVar(src[0].getValue())) == NULL)
+			throw runtime_error("Memory variable " + src[0].getValue() + " is not defined.");
+
+		srcVars->push_back(var);
 		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, 
 								labelName, currentLabel);
 		break;
@@ -230,27 +234,47 @@ void SyntaxAnalysis::CreateInstruction(InstructionType type,
 	case I_LW: // lw rid,num(rid)
 	case I_LH: // lh rid,num(rid)
 	case I_SW: // sw rid,num(rid)
-		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
-		srcVars->push_back(ContainsRegisterVar(src[1].getValue()));
+		if ((var = ContainsRegisterVar(dst[0].getValue())) == NULL)
+			throw runtime_error("Register variable " + dst[0].getValue() + " is not defined.");
+
+		destVars->push_back(var);
+
+		if ((var = ContainsRegisterVar(src[1].getValue())) == NULL)
+			throw runtime_error("Register variable " + src[1].getValue() + " is not defined.");
+
+		srcVars->push_back(var);
 		instr = new RelInstruction(instructionCounter, type, *destVars, *srcVars,
 								stoi(src[0].getValue()), labelName, currentLabel);
 		break;
 
 	case I_LI: // li rid,num
-		destVars->push_back(ContainsRegisterVar(dst[0].getValue()));
+		if ((var = ContainsRegisterVar(dst[0].getValue())) == NULL)
+			throw runtime_error("Register variable " + dst[0].getValue() + " is not defined.");
+
+		destVars->push_back(var);
 		instr = new RelInstruction(instructionCounter, type, *destVars, *srcVars, 
 								stoi(src[0].getValue()), labelName, currentLabel);
 		break;
 
 	case I_BLTZ: // bltz rid,id
-		srcVars->push_back(ContainsRegisterVar(src[0].getValue()));
+		if ((var = ContainsRegisterVar(src[0].getValue())) == NULL)
+			throw runtime_error("Register variable " + src[0].getValue() + " is not defined.");
+
+		srcVars->push_back(var);
+		
 		labelName = dst[0].getValue();
+		if (!ContainsLabel(labelName))
+			throw runtime_error("Label " + labelName + " is not defined.");
+
 		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, 
 								labelName, currentLabel);
 		break;
 
 	case I_B:   // b id
 		labelName = dst[0].getValue();
+		if (!ContainsLabel(labelName))
+			throw runtime_error("Label " + labelName + " is not defined.");
+
 		instr = new Instruction(instructionCounter, type, *destVars, *srcVars, 
 								labelName, currentLabel);
 		break;
