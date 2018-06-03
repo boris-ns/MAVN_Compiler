@@ -28,10 +28,11 @@ public:
 	VariableType GetType();
 	void SetAssignment(Regs r);
 
+	/* Prints variable name. */
 	friend std::ostream& operator<<(std::ostream& out, const Variable& v);
 
 private:
-	int value;            // value variable contains if it is memory var.
+	int value;            // value variable contains number if it is memory var.
 	int m_position;       // position in interference matrix
 	Regs m_assignment;    // assigned register
 	std::string m_name;

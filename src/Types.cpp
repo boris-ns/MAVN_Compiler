@@ -13,5 +13,6 @@ std::ostream& operator<<(std::ostream& out, Regs r)
 	case t5: out << "t5"; break;
 	case t6: out << "t6"; break;
 	}
+
 	return out;
 }

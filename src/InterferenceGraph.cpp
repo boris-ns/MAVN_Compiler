@@ -16,8 +16,12 @@ InterferenceGraph::~InterferenceGraph()
 /* Creates interference graph (matrix) from instructions. */
 void InterferenceGraph::BuildInterferenceGraph(Instructions& instructions)
 {
+	// Initialize interference matrix to the size*size of reg vars
 	ResizeInterferenceMatrix(regVariables.size());
 
+	// In every instructions, for all defined variables add
+	// interference between defined variable and all out
+	// variables from instruction.
 	for (Instructions::iterator it = instructions.begin();
 		it != instructions.end();
 		it++)
@@ -33,6 +37,7 @@ void InterferenceGraph::BuildInterferenceGraph(Instructions& instructions)
 				int defPos = (*defVar)->GetPos();
 				int outPos = (*outVar)->GetPos();
 
+				// Variable can't be in interference with itself
 				if (defPos != outPos)
 				{
 					im[defPos][outPos] = __INTERFERENCE__;
@@ -83,9 +88,11 @@ void InterferenceGraph::ApplyRegToVariable(int varPos, Regs reg)
 /* Allocates real registers to variables according to the interference. */
 bool InterferenceGraph::ResourceAllocation()
 {
-	list<Regs> freeRegs;
-	list<Variable*> colored;
+	list<Regs> freeRegs;      // List of unasigned registers
+	list<Variable*> colored;  // Variables that have been assigned with register
 
+	// Fill free regs w/ all registers
+	// Change __REG_NUMBER__ if you want more/less registers
 	for (int i = 1; i <= __REG_NUMBER__; i++) 
 		freeRegs.push_back((Regs)i);
 
@@ -94,12 +101,15 @@ bool InterferenceGraph::ResourceAllocation()
 		Variable* temp = varStack.top();
 		bool interference = false;
 
+		// Check if there is interference between temp and 
+		// any other already colored variable
 		for (auto it = colored.begin(); it != colored.end(); it++)
 		{
 			if (im[temp->GetPos()][(*it)->GetPos()] == __INTERFERENCE__) 
 				interference = true;
 		}
 
+		// If there is no interference assign first reg. to temp
 		if (!interference)
 		{
 			if (freeRegs.empty())
@@ -109,6 +119,7 @@ bool InterferenceGraph::ResourceAllocation()
 		}
 		else
 		{
+			// If there is interference pick up new register to assign to temp
 			if (!freeRegs.empty())
 			{
 				freeRegs.pop_front();

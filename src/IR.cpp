@@ -17,7 +17,7 @@ bool ContainsVariable(Variable& variable, Variables& variableList)
 	return false;
 }
 
-/* Does liveness analysis and created in and out variable lists. */
+/* Does liveness analysis and creates in and out variable lists. */
 void LivenessAnalysis(Instructions& instructions)
 {
 	bool again = true;
@@ -59,11 +59,13 @@ void LivenessAnalysis(Instructions& instructions)
 					outMinusDef.push_back(*varIt);
 			}
 
+			// newIn = use and newIn.insert(outMinusDef) and unique are a way to do union
 			newIn = use;
 			newIn.insert(newIn.end(), outMinusDef.begin(), outMinusDef.end());
 			newIn.sort();
 			newIn.unique();
 
+			// Repeat condition
 			if (newIn != in || newOut != out)
 				again = true;
 
@@ -107,36 +109,43 @@ Variable::~Variable()
 {
 }
 
+/* Get name */
 std::string Variable::GetName() 
 { 
 	return m_name;
 }
 
+/* Get position in interference matrix */
 int Variable::GetPos()
 {
 	return m_position;
 }
 
+/* Get type */
 Variable::VariableType Variable::GetType()
 {
 	return m_type;
 }
 
+/* Get assigned register */
 Regs Variable::GetAssignment()
 {
 	return m_assignment;
 }
 
+/* Get value */
 int Variable::GetValue()
 {
 	return value;
 }
 
+/* Set register (assign reg) */
 void Variable::SetAssignment(Regs r)
 {
 	m_assignment = r;
 }
 
+/* Print variable name to the output */
 std::ostream& operator<<(std::ostream& out, const Variable& v)
 {
 	out << v.m_name;
@@ -307,16 +316,19 @@ ostream& operator<<(ostream& out, Instruction& i)
 	return out;
 }
 
+/* Get instruction type */
 InstructionType Instruction::GetType()
 {
 	return m_type;
 }
 
+/* Get label name to which instr. jumps to */
 std::string Instruction::GetLabelName()
 { 
 	return labelName; 
 }
 
+/* Get label name which contains this instruction */
 std::string Instruction::GetLabel()
 {
 	return label;
@@ -335,6 +347,7 @@ RelInstruction::~RelInstruction()
 {
 }
 
+/* Get number */
 int RelInstruction::GetNumValue()
 {
 	return numValue;

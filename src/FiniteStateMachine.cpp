@@ -139,13 +139,14 @@ const int FiniteStateMachine::stateMatrix[NUM_STATES][NUM_OF_CHARACTERS] =
 	/* state 46 */  {20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}		// T_LH
 };
 
-
+/* Get token type from the number of the state */
 TokenType FiniteStateMachine::getTokenType(int stateNumber)
 {
 	return stateToTokenTable[stateNumber];
 }
 
-
+/* Call this function to initialize FSM.
+   This function must be called before getNextLexToken function. */
 void FiniteStateMachine::initStateMachine()
 {
 	for (int i = 0; i < NUM_STATES; i++)
@@ -159,7 +160,7 @@ void FiniteStateMachine::initStateMachine()
 	}
 }
 
-
+/* Returns the next state number, based on current state and transition letter */
 int FiniteStateMachine::getNextState(int currentState, char transitionLetter)
 {
 	STATE_MACHINE::iterator it = stateMachine.find(currentState);

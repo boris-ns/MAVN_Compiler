@@ -13,6 +13,7 @@ typedef std::stack<Variable*> VariableStack;
 class InterferenceGraph
 {
 public:
+	/* Constructor, destructor */
 	InterferenceGraph(Variables& vars);
 	~InterferenceGraph();
 
@@ -29,7 +30,7 @@ public:
 	void PrintInterferenceMatrix();
 
 	InterferenceMatrix im;
-	VariableStack varStack;  // same as list of instructions, just in from of stack
+	VariableStack varStack;  // same as list of instructions, just in form of stack
 
 private:
 

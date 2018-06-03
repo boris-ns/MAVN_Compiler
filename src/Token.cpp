@@ -18,31 +18,31 @@ Token::~Token(void)
 {
 }
 
-
+/* Returns token type */
 TokenType Token::getType()
 {
 	return this->tokenType;
 }
 
-
+/* Sets token type */
 void Token::setType(TokenType t)
 {
 	this->tokenType = t;
 }
 
-
+/* Returns token value */
 string Token::getValue()
 {
 	return this->value;
 }
 
-
+/* Sets token value */
 void Token::setValue(string s)
 {
 	this->value = s;
 }
 
-
+/* Creates a token */
 void Token::makeToken(int begin, int end, std::vector<char>& programBuffer,  int lastFiniteState)
 {
 	string value = "";
@@ -54,34 +54,34 @@ void Token::makeToken(int begin, int end, std::vector<char>& programBuffer,  int
 	this->tokenType = FiniteStateMachine::getTokenType(lastFiniteState);
 }
 
-
+/* Creates an error token, storing the errnous content as token value */
 void Token::makeErrorToken(int pos, std::vector<char>& programBuffer)
 {
 	this->tokenType = T_ERROR;
 	this->value = programBuffer[pos];
 }
 
-
+/* Creates end of file token when it is reached */
 void Token::makeEofToken()
 {
 	this->tokenType = T_END_OF_FILE;
 	this->value = "EOF";
 }
 
-
+/* Prints token type and value */
 void Token::printTokenInfo()
 {
 	cout << setw(LEFT_ALIGN) << left << tokenTypeToString(this->tokenType);
 	cout << setw(RIGHT_ALIGN) << right << this->value << endl;
 }
 
-
+/* Prints token value */
 void Token::printTokenValue()
 {
 	cout << this->value << endl;
 }
 
-
+/* Helper function to get string representation of token type */
 string Token::tokenTypeToString(TokenType t)
 {
 	switch (t)

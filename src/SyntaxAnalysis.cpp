@@ -402,7 +402,8 @@ void SyntaxAnalysis::q()
 	l();
 }
 
-/* Implementation of nonterminal S */
+/* Implementation of nonterminal S.
+   From this method we add new variables and labels/functions. */
 void SyntaxAnalysis::s()
 {
 	string name;

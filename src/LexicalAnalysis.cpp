@@ -8,14 +8,14 @@
 
 using namespace std;
 
-
+/* Method for initializing the lexical analysis and FSM */
 void LexicalAnalysis::initialize()
 {
 	programBufferPosition = 0;
 	fsm.initStateMachine();
 }
 
-
+/* Method which performs lexical analysis */
 bool LexicalAnalysis::Do()
 {
 	while(1)
@@ -39,7 +39,7 @@ bool LexicalAnalysis::Do()
 	}
 }
 
-
+/* Method for reading the input file */
 bool LexicalAnalysis::readInputFile(string fileName)
 {
 	inputFile.open(fileName, ios_base::binary);
@@ -57,7 +57,10 @@ bool LexicalAnalysis::readInputFile(string fileName)
 	return true;
 }
 
-
+/**
+* Use this function to get next lexical token from program source code.
+* @return next lexical token in program source code
+*/
 Token LexicalAnalysis::getNextTokenLex()
 {
 	int currentState = START_STATE;
@@ -152,13 +155,16 @@ Token LexicalAnalysis::getNextTokenLex()
 	return token;
 }
 
-
+/**
+* Use this function to get the list of tokens read from the source code
+* @return list of tokens
+*/
 TokenList& LexicalAnalysis::getTokenList()
 {
 	return tokenList;
 }
 
-
+/* Prints the token list */
 void LexicalAnalysis::printTokens()
 {
 	if (tokenList.empty())
@@ -176,7 +182,7 @@ void LexicalAnalysis::printTokens()
 	}
 }
 
-
+/* Prints the errornous token if present */
 void LexicalAnalysis::printLexError()
 {
 	if (errorToken.getType() != T_NO_TYPE)
@@ -190,7 +196,8 @@ void LexicalAnalysis::printLexError()
 	}
 }
 
-
+/* Used for printing the test list. It decorates the 
+   output with header naming the columns */
 void LexicalAnalysis::printMessageHeader()
 {
 	cout << setw(LEFT_ALIGN) << left << "Type:";
