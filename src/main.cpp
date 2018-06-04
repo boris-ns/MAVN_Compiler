@@ -32,8 +32,8 @@ void main(int argc, char** argv)
 		return;
 	}
 
-	/*inputFile = "../examples/label_name_same_as_func.mavn";
-	outputFile = "../examples/not_defined_label.s";*/
+	/*inputFile = "../tests/mavn_files/multiply.mavn";
+	outputFile = "../tests/compiled_files/multiply.s";*/
 
 	try
 	{

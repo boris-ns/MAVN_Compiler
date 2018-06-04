@@ -123,6 +123,10 @@ bool InterferenceGraph::ResourceAllocation()
 			if (!freeRegs.empty())
 			{
 				freeRegs.pop_front();
+
+				if (freeRegs.empty())
+					return false;
+
 				temp->SetAssignment(freeRegs.front());
 			}
 			else
